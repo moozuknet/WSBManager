@@ -2,33 +2,32 @@
 // State Management
 let presetsState = {};
 let activePresetName = '';
-let presetSortMode = 'updated-desc';
+let presetCustomOrder = [];
+let draggedItemName = null;
 
 // Initial load on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   initDefaults();
-  loadSortModeFromStorage();
+  loadPresetOrderFromStorage();
   loadPresetsFromLocalStorage();
   syncCloudPresetsSilently();
 });
 
-function loadSortModeFromStorage() {
+function loadPresetOrderFromStorage() {
   try {
-    const saved = localStorage.getItem('WSB_PRESET_SORT_MODE');
-    if (saved) {
-      presetSortMode = saved;
-      const select = document.getElementById('presetSortSelect');
-      if (select) select.value = saved;
+    const raw = localStorage.getItem('WSB_PRESET_ORDER');
+    if (raw) {
+      presetCustomOrder = JSON.parse(raw);
     }
-  } catch (e) {}
+  } catch (e) {
+    presetCustomOrder = [];
+  }
 }
 
-function changePresetSortMode(mode) {
-  presetSortMode = mode;
+function savePresetOrderToStorage() {
   try {
-    localStorage.setItem('WSB_PRESET_SORT_MODE', mode);
+    localStorage.setItem('WSB_PRESET_ORDER', JSON.stringify(presetCustomOrder));
   } catch (e) {}
-  renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
 }
 
 // Default Presets initialization if empty
@@ -367,22 +366,11 @@ function renderPresetList(filter = '') {
   });
 
   keys.sort((a, b) => {
-    const itemA = presetsState[a] || {};
-    const itemB = presetsState[b] || {};
-
-    if (presetSortMode === 'name-asc') {
-      return a.localeCompare(b, 'ko');
-    } else if (presetSortMode === 'name-desc') {
-      return b.localeCompare(a, 'ko');
-    } else if (presetSortMode === 'updated-asc') {
-      const timeA = new Date(itemA.updatedAt || 0).getTime();
-      const timeB = new Date(itemB.updatedAt || 0).getTime();
-      return timeA - timeB;
-    } else {
-      const timeA = new Date(itemA.updatedAt || 0).getTime();
-      const timeB = new Date(itemB.updatedAt || 0).getTime();
-      return timeB - timeA;
-    }
+    let indexA = presetCustomOrder.indexOf(a);
+    let indexB = presetCustomOrder.indexOf(b);
+    if (indexA === -1) indexA = 9999;
+    if (indexB === -1) indexB = 9999;
+    return indexA - indexB;
   });
 
   if (keys.length === 0) {
@@ -393,26 +381,84 @@ function renderPresetList(filter = '') {
   keys.forEach(name => {
     const isActive = name === activePresetName;
     const item = document.createElement('li');
+    item.setAttribute('draggable', 'true');
+    item.setAttribute('data-name', name);
     item.className = `preset-item glass-card-hover p-3 rounded-xl border border-slate-800 cursor-pointer flex items-center justify-between group ${isActive ? 'active' : ''}`;
     
     const descText = presetsState[name].presetDescription ? escapeHtml(presetsState[name].presetDescription) : '';
 
     item.innerHTML = `
-      <div class="flex-1 pr-2 truncate" onclick="loadPreset('${escapeJsString(name)}')">
-        <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
-          ${escapeHtml(name)}
-        </div>
-        ${descText ? `<div class="text-[11px] text-sky-400/80 truncate mt-0.5 font-normal"><i class="fa-regular fa-comment-dots mr-1 text-[10px]"></i>${descText}</div>` : ''}
-        <div class="text-[10px] text-slate-500 truncate mt-0.5">
-          vGPU: ${presetsState[name].vGpu || 'Default'} | Net: ${presetsState[name].networking || 'Default'}
+      <div class="flex items-center flex-1 pr-2 truncate">
+        <i class="fa-solid fa-grip-vertical text-slate-600 group-hover:text-sky-400 drag-handle mr-2 text-xs" title="끌어서 순서 조정"></i>
+        <div class="flex-1 truncate" onclick="loadPreset('${escapeJsString(name)}')">
+          <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
+            ${escapeHtml(name)}
+          </div>
+          ${descText ? `<div class="text-[11px] text-sky-400/80 truncate mt-0.5 font-normal"><i class="fa-regular fa-comment-dots mr-1 text-[10px]"></i>${descText}</div>` : ''}
+          <div class="text-[10px] text-slate-500 truncate mt-0.5">
+            vGPU: ${presetsState[name].vGpu || 'Default'} | Net: ${presetsState[name].networking || 'Default'}
+          </div>
         </div>
       </div>
       <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition" title="삭제">
         <i class="fa-solid fa-xmark text-xs"></i>
       </button>
     `;
+
+    // Drag & Drop Events
+    item.addEventListener('dragstart', (e) => {
+      draggedItemName = name;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', name);
+      item.classList.add('dragging');
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      item.classList.add('drag-over');
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('drag-over');
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('drag-over', 'dragging'));
+    });
+
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const targetName = item.getAttribute('data-name');
+      if (draggedItemName && targetName && draggedItemName !== targetName) {
+        reorderPresetOrder(draggedItemName, targetName);
+      }
+    });
+
     listEl.appendChild(item);
   });
+}
+
+function reorderPresetOrder(draggedName, targetName) {
+  let currentKeys = Object.keys(presetsState);
+  let order = presetCustomOrder.filter(k => currentKeys.includes(k));
+  currentKeys.forEach(k => {
+    if (!order.includes(k)) order.push(k);
+  });
+
+  const fromIndex = order.indexOf(draggedName);
+  const toIndex = order.indexOf(targetName);
+
+  if (fromIndex !== -1 && toIndex !== -1) {
+    order.splice(fromIndex, 1);
+    order.splice(toIndex, 0, draggedName);
+    presetCustomOrder = order;
+    savePresetOrderToStorage();
+    renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+    showToast(`'${draggedName}' 프리셋 순서가 조정되었습니다.`, 'info');
+  }
 }
 
 function loadPreset(name) {

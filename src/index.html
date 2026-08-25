@@ -31,7 +31,7 @@
           <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300 flex items-center gap-2">
             WSB Manager Web
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-medium">GAS Edition</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.28-SORT</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.30-DRAG</span>
           </h1>
           <p class="text-xs sm:text-sm text-slate-400">Windows Sandbox (.wsb) 설정 관리 및 원클릭 XML 빌더</p>
         </div>
@@ -74,18 +74,18 @@
             </button>
           </div>
 
-          <!-- Preset Search Filter & Sort Options -->
-          <div class="flex items-center gap-2">
-            <div class="relative flex-1">
+          <!-- Preset Search Filter & Drag Reorder Hint -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium px-0.5">
+              <span class="flex items-center gap-1.5 text-sky-400">
+                <i class="fa-solid fa-grip-vertical"></i> 드래그하여 순서 조정
+              </span>
+              <span class="text-[10px] text-slate-500">목록을 끌어서 놓으세요</span>
+            </div>
+            <div class="relative">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
               <input type="text" id="presetSearch" oninput="filterPresets()" placeholder="프리셋 검색..." class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition">
             </div>
-            <select id="presetSortSelect" onchange="changePresetSortMode(this.value)" class="bg-slate-900/90 border border-slate-800 text-xs text-slate-300 rounded-xl px-2 py-1.5 focus:outline-none focus:border-sky-500 transition" title="정렬 순서 선택">
-              <option value="updated-desc" selected>🕒 최신순</option>
-              <option value="name-asc">🔤 이름순</option>
-              <option value="name-desc">🔲 이름역순</option>
-              <option value="updated-asc">⏳ 오래된순</option>
-            </select>
           </div>
 
           <!-- Preset Scrollable List -->
