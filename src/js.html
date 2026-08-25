@@ -217,13 +217,13 @@ function applySnippetTemplate() {
 
     // 🌐 Direct Web Installer Templates
     case 'direct-chrome':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$env:TEMP\\chrome.exe'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent /install' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Write-Host 'Google Chrome 다운로드 및 무소음 설치 중...'; Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$env:TEMP\\chrome.exe'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent /install' -Wait; Write-Host 'Google Chrome 설치가 완벽히 완료되었습니다!'"`;
       break;
     case 'direct-vscode':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Write-Host 'VS Code 다운로드 및 무소음 설치 중...'; Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait; Write-Host 'VS Code 설치가 완벽히 완료되었습니다!'"`;
       break;
     case 'direct-git':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe' -OutFile '$env:TEMP\\git.exe'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT /NORESTART' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Write-Host 'Git for Windows 다운로드 및 무소음 설치 중...'; Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe' -OutFile '$env:TEMP\\git.exe'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT /NORESTART' -Wait; Write-Host 'Git for Windows 설치가 완벽히 완료되었습니다!'"`;
       break;
 
     // ⚙️ Utilities
