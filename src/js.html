@@ -864,19 +864,13 @@ function importXmlFromTextarea() {
 function toPowerShellEncodedCommand(scriptText) {
   if (!scriptText || scriptText.trim() === '') return '';
   const text = scriptText.trim();
-  if (text.includes('-EncodedCommand')) return text;
-  
-  let innerScript = text;
-  const match = text.match(/powershell(?:\.exe)?\s+(?:-[^\s]+\s+)*-Command\s+"([\s\S]+)"$/i);
-  if (match && match[1]) {
-    innerScript = match[1];
-  } else if (!text.includes(';') && !text.includes('"')) {
+  if (/^(powershell|cmd)(\.exe)?/i.test(text) || text.includes('-EncodedCommand')) {
     return text;
   }
 
   const byteArray = [];
-  for (let i = 0; i < innerScript.length; i++) {
-    const code = innerScript.charCodeAt(i);
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
     byteArray.push(code & 0xff);
     byteArray.push((code >> 8) & 0xff);
   }

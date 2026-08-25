@@ -24,19 +24,13 @@ var WsbGenerator = (function() {
   function toPowerShellEncodedCommand(scriptText) {
     if (!scriptText || scriptText.trim() === '') return '';
     var text = scriptText.trim();
-    if (text.indexOf('-EncodedCommand') !== -1) return text;
-    
-    var innerScript = text;
-    var match = text.match(/powershell(?:\.exe)?\s+(?:-[^\s]+\s+)*-Command\s+"([\s\S]+)"$/i);
-    if (match && match[1]) {
-      innerScript = match[1];
-    } else if (text.indexOf(';') === -1 && text.indexOf('"') === -1) {
+    if (/^(powershell|cmd)(\.exe)?/i.test(text) || text.indexOf('-EncodedCommand') !== -1) {
       return text;
     }
 
     var byteArray = [];
-    for (var i = 0; i < innerScript.length; i++) {
-      var code = innerScript.charCodeAt(i);
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
       byteArray.push(code & 0xff);
       byteArray.push((code >> 8) & 0xff);
     }
