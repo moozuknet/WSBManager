@@ -723,12 +723,16 @@ function backupDrive() {
 }
 
 function openDriveBackupModal() {
+  addDebugLog('openDriveBackupModal 실행됨', 'info');
   const modal = document.getElementById('driveBackupModal');
   const fileList = document.getElementById('driveBackupFileList');
   const infoText = document.getElementById('driveFolderNameInfo');
   if (modal) {
-    modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    addDebugLog('driveBackupModal 표시 (display: flex)', 'success');
   }
 
   fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Google Drive 백업 목록을 불러오는 중...</li>`;
@@ -775,10 +779,13 @@ function openDriveBackupModal() {
 }
 
 function closeDriveBackupModal() {
+  addDebugLog('closeDriveBackupModal 실행됨', 'info');
   const modal = document.getElementById('driveBackupModal');
   if (modal) {
-    modal.style.display = 'none';
     modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
   }
 }
 
@@ -824,22 +831,29 @@ function exportPresetsJson() {
 }
 
 function openImportJsonModal() {
+  addDebugLog('openImportJsonModal 실행됨', 'info');
   const modal = document.getElementById('importJsonModal');
   const fileNameEl = document.getElementById('importFileName');
   const textAreaEl = document.getElementById('importJsonText');
   if (modal) {
-    modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    addDebugLog('importJsonModal 표시 (display: flex)', 'success');
   }
   if (fileNameEl) fileNameEl.textContent = '선택된 파일 없음';
   if (textAreaEl) textAreaEl.value = '';
 }
 
 function closeImportJsonModal() {
+  addDebugLog('closeImportJsonModal 실행됨', 'info');
   const modal = document.getElementById('importJsonModal');
   if (modal) {
-    modal.style.display = 'none';
     modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
   }
 }
 
