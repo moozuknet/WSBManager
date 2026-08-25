@@ -225,6 +225,15 @@ function applySnippetTemplate() {
     case 'direct-git':
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Git for Windows 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\git.exe' 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe'; Write-Host 'Git 설치 중...'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT', '/NORESTART' -Wait; Write-Host 'Git 설치 완벽 완료!'"`;
       break;
+    case 'direct-7zip':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host '7-Zip 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\7z.exe' 'https://www.7-zip.org/a/7z2408-x64.exe'; Write-Host '7-Zip 설치 중...'; Start-Process '$env:TEMP\\7z.exe' -ArgumentList '/S' -Wait; Write-Host '7-Zip 설치 완벽 완료!'"`;
+      break;
+    case 'direct-notepadpp':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Notepad++ 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\npp.exe' 'https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe'; Write-Host 'Notepad++ 설치 중...'; Start-Process '$env:TEMP\\npp.exe' -ArgumentList '/S' -Wait; Write-Host 'Notepad++ 설치 완벽 완료!'"`;
+      break;
+    case 'direct-dev-pack':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Chrome & VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\c.exe' 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'; Start-Process '$env:TEMP\\c.exe' -ArgumentList '/silent', '/install' -Wait; curl.exe -s -L -o '$env:TEMP\\v.exe' 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user'; Start-Process '$env:TEMP\\v.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host '개발 툴 팩 설치 완벽 완료!'"`;
+      break;
 
     // ⚙️ Utilities
     case 'open-browser':
