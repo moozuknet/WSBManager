@@ -211,7 +211,7 @@ function applySnippetTemplate() {
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe' -OutFile '$env:TEMP\\npp.exe'; Start-Process '$env:TEMP\\npp.exe' -ArgumentList '/S' -Wait"`;
       break;
     case 'dev-pack':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$t=$env:TEMP; Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$t\\c.exe'; Start-Process '$t\\c.exe' -ArgumentList '/silent /install' -Wait; Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$t\\v.exe'; Start-Process '$t\\v.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$env:TEMP\\chrome.exe'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent /install' -Wait; Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`;
       break;
     case 'open-browser':
       snippet = `cmd.exe /c start https://google.com`;
