@@ -220,7 +220,7 @@ function applySnippetTemplate() {
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Google Chrome 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\chrome.exe' 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'; Write-Host 'Google Chrome 설치 중...'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent', '/install' -Wait; Write-Host 'Google Chrome 설치 완벽 완료!'"`;
       break;
     case 'direct-vscode':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\vscode.exe' 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user'; Write-Host 'VS Code 설치 중...'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host 'VS Code 설치 완벽 완료!'"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\vscode.exe' 'https://update.code.visualstudio.com/latest/win32-x64-user/stable'; Write-Host 'VS Code 설치 중...'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host 'VS Code 설치 완벽 완료!'"`;
       break;
     case 'direct-git':
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Git for Windows 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\git.exe' 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe'; Write-Host 'Git 설치 중...'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT', '/NORESTART' -Wait; Write-Host 'Git 설치 완벽 완료!'"`;
@@ -232,7 +232,7 @@ function applySnippetTemplate() {
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Notepad++ 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\npp.exe' 'https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe'; Write-Host 'Notepad++ 설치 중...'; Start-Process '$env:TEMP\\npp.exe' -ArgumentList '/S' -Wait; Write-Host 'Notepad++ 설치 완벽 완료!'"`;
       break;
     case 'direct-dev-pack':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Chrome & VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\c.exe' 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'; Start-Process '$env:TEMP\\c.exe' -ArgumentList '/silent', '/install' -Wait; curl.exe -s -L -o '$env:TEMP\\v.exe' 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user'; Start-Process '$env:TEMP\\v.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host '개발 툴 팩 설치 완벽 완료!'"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Chrome 및 VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\c.exe' 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'; Start-Process '$env:TEMP\\c.exe' -ArgumentList '/silent', '/install' -Wait; curl.exe -s -L -o '$env:TEMP\\v.exe' 'https://update.code.visualstudio.com/latest/win32-x64-user/stable'; Start-Process '$env:TEMP\\v.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host '개발 툴 팩 설치 완벽 완료!'"`;
       break;
 
     // ⚙️ Utilities
@@ -721,13 +721,11 @@ function importPresetsJson(event) {
 // ----------------------------------------------------
 function escapeXml(unsafe) {
   if (!unsafe) return '';
-  return String(unsafe).replace(/[<>&'"]/g, function (c) {
+  return String(unsafe).replace(/[<>&]/g, function (c) {
     switch (c) {
       case '<': return '&lt;';
       case '>': return '&gt;';
       case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
       default: return c;
     }
   });
