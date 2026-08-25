@@ -94,14 +94,14 @@
               <span id="syncBadge" class="w-2 h-2 rounded-full bg-emerald-500"></span> Local / Cloud Sync
             </span>
             <div class="flex items-center gap-2">
-              <button onclick="exportPresetsJson()" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
+              <button onclick="exportPresetsJson()" type="button" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
                 <i class="fa-solid fa-file-export"></i> 내보내기
               </button>
               <span>|</span>
-              <label class="hover:text-slate-200 transition cursor-pointer" title="프리셋 JSON 불러오기">
+              <button onclick="triggerImportJson()" type="button" class="hover:text-slate-200 transition cursor-pointer" title="프리셋 JSON 불러오기">
                 <i class="fa-solid fa-file-import"></i> 가져오기
-                <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" class="hidden">
-              </label>
+              </button>
+              <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" style="display:none !important;">
             </div>
           </div>
         </div>

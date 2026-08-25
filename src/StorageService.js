@@ -6,11 +6,24 @@ var StorageService = (function() {
   var STORAGE_KEY = 'WSB_PRESETS_V1';
 
   /**
-   * 저장소에서 전체 프리셋 JSON 파싱 후 반환
+   * 저장소에서 전체 프리셋 JSON 파싱 후 반환 (청크 처리 지원)
    */
   function _loadPresets() {
     try {
       var userProps = PropertiesService.getUserProperties();
+      var totalChunksStr = userProps.getProperty(STORAGE_KEY + '_TOTAL_CHUNKS');
+      
+      if (totalChunksStr) {
+        var totalChunks = parseInt(totalChunksStr, 10);
+        var jsonStr = '';
+        for (var c = 0; c < totalChunks; c++) {
+          var chunk = userProps.getProperty(STORAGE_KEY + '_CHUNK_' + c);
+          if (chunk) jsonStr += chunk;
+        }
+        return jsonStr ? JSON.parse(jsonStr) : {};
+      }
+
+      // 레거시 단일 속성 하위 호환
       var data = userProps.getProperty(STORAGE_KEY);
       return data ? JSON.parse(data) : {};
     } catch (e) {
@@ -20,11 +33,30 @@ var StorageService = (function() {
   }
 
   /**
-   * 프리셋 전체 저장
+   * 프리셋 전체 저장 (PropertiesService 9KB 제한 해제를 위한 청크 분할 저장)
    */
   function _savePresetsMap(presetsMap) {
     var userProps = PropertiesService.getUserProperties();
-    userProps.setProperty(STORAGE_KEY, JSON.stringify(presetsMap));
+    var jsonStr = JSON.stringify(presetsMap);
+
+    // 기존 단일 및 청크 속성 초기화
+    userProps.removeProperty(STORAGE_KEY);
+    var keys = userProps.getKeys();
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf(STORAGE_KEY + '_CHUNK_') === 0) {
+        userProps.removeProperty(keys[i]);
+      }
+    }
+
+    // 8000 자 단위 청크 분할 (안전 범위)
+    var chunkSize = 8000;
+    var totalChunks = Math.ceil(jsonStr.length / chunkSize);
+    userProps.setProperty(STORAGE_KEY + '_TOTAL_CHUNKS', String(totalChunks));
+
+    for (var c = 0; c < totalChunks; c++) {
+      var chunk = jsonStr.substring(c * chunkSize, (c + 1) * chunkSize);
+      userProps.setProperty(STORAGE_KEY + '_CHUNK_' + c, chunk);
+    }
   }
 
   return {

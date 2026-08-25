@@ -653,27 +653,42 @@ function exportPresetsJson() {
   showToast('프리셋 JSON 파일 내보내기가 완료되었습니다.', 'success');
 }
 
-function importPresetsJson(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+function triggerImportJson() {
+  const fileInput = document.getElementById('importJsonFile');
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
+}
 
+function importPresetsJson(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  const file = files[0];
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const imported = JSON.parse(e.target.result);
-      if (typeof imported === 'object' && imported !== null) {
+      const content = e.target.result;
+      const imported = JSON.parse(content);
+
+      if (typeof imported === 'object' && imported !== null && !Array.isArray(imported)) {
+        // Merge imported presets with presetsState
         presetsState = Object.assign({}, presetsState, imported);
         savePresetsToLocalStorage();
 
-        // Sync imported presets to Cloud so silent sync won't overwrite them
+        // Sync imported presets to Cloud
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler((res) => {
-              showToast('프리셋 JSON 파일을 복원하고 클라우드에 연동했습니다.', 'success');
+              showToast('프리셋 JSON 파일을 성공적으로 불러오고 클라우드에 연동했습니다.', 'success');
+            })
+            .withFailureHandler((err) => {
+              showToast('로컬 복원 완료 (클라우드 연동: ' + (err ? err.message : '') + ')', 'info');
             })
             .saveAllPresetsToCloud(presetsState);
         } else {
-          showToast('프리셋 JSON 파일을 성공적으로 복원했습니다.', 'success');
+          showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
         }
 
         const keys = Object.keys(imported);
@@ -683,12 +698,12 @@ function importPresetsJson(event) {
           renderPresetList();
         }
       } else {
-        showToast('유효한 프리셋 JSON 파일이 아닙니다.', 'error');
+        showToast('유효하지 않은 프리셋 JSON 파일 포맷입니다.', 'error');
       }
     } catch (err) {
-      showToast('올바르지 않은 JSON 파일 포맷입니다: ' + err.message, 'error');
+      showToast('JSON 파일 읽기 실패: ' + err.message, 'error');
     }
-    event.target.value = ''; // Reset input element so user can choose same file again if needed
+    event.target.value = ''; // Reset input element
   };
   reader.readAsText(file);
 }
