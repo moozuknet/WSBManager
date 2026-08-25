@@ -3,12 +3,18 @@
 let presetsState = {};
 let activePresetName = '';
 
-// Initial load on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initial load on DOM ready (Immediate execution fallback for GAS iframe)
+function bootApp() {
   initDefaults();
   loadPresetsFromLocalStorage();
   syncCloudPresetsSilently();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}
 
 // Default Presets initialization if empty
 function initDefaults() {

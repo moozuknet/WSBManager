@@ -74,6 +74,19 @@ function exportPresetsToDrive() {
 }
 
 /**
+ * 구글 드라이브 및 스크립트 서비스 권한 일괄 승인 헬퍼 함수
+ * (스크립트 편집기에서 최초 1회 [실행]하여 [권한 확인]을 허용하면 웹앱 접속 및 모든 버튼 클릭이 100% 정상 작동합니다)
+ */
+function testAuth() {
+  Logger.log('Script ID: ' + ScriptApp.getScriptId());
+  var folder = StorageService.getDestinationFolder();
+  Logger.log('Target Folder Name: ' + folder.getName());
+  var presets = StorageService.getPresets();
+  Logger.log('Current Presets count: ' + Object.keys(presets.data || {}).length);
+  return 'SUCCESS';
+}
+
+/**
  * 전체 프리셋 객체 일괄 저장
  */
 function saveAllPresetsToCloud(presetsMap) {
