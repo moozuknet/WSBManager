@@ -15,9 +15,17 @@
     background: rgba(71, 85, 105, 1);
   }
 
-  /* Modal hidden fallback */
+  /* Modal hidden fallback & Click pointer events guarantee */
   .hidden {
     display: none !important;
+  }
+
+  button, label, select, input, option {
+    pointer-events: auto !important;
+  }
+
+  button, label[for], select {
+    cursor: pointer !important;
   }
 
   /* Glassmorphism & Custom Elements */

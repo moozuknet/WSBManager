@@ -3,11 +3,36 @@
 let presetsState = {};
 let activePresetName = '';
 
+// Safe localStorage wrapper for iframe compatibility (avoids SecurityError in blocked third-party storage)
+const memoryStorageFallback = {};
+
+function safeGetLocalStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn('localStorage getItem blocked, using memory storage fallback:', e);
+    return memoryStorageFallback[key] !== undefined ? memoryStorageFallback[key] : null;
+  }
+}
+
+function safeSetLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn('localStorage setItem blocked, using memory storage fallback:', e);
+    memoryStorageFallback[key] = String(value);
+  }
+}
+
 // Initial load on DOM ready (Immediate execution fallback for GAS iframe)
 function bootApp() {
-  initDefaults();
-  loadPresetsFromLocalStorage();
-  syncCloudPresetsSilently();
+  try {
+    initDefaults();
+    loadPresetsFromLocalStorage();
+    syncCloudPresetsSilently();
+  } catch (err) {
+    console.error('Boot error caught:', err);
+  }
 }
 
 if (document.readyState === 'loading') {
@@ -18,7 +43,7 @@ if (document.readyState === 'loading') {
 
 // Default Presets initialization if empty
 function initDefaults() {
-  const localData = localStorage.getItem('WSB_PRESETS');
+  const localData = safeGetLocalStorage('WSB_PRESETS');
   if (localData === null) {
     const defaultPresets = {
       "기본 샌드박스 (Default)": {
@@ -314,7 +339,7 @@ function copyXmlToClipboard() {
 // ----------------------------------------------------
 function loadPresetsFromLocalStorage() {
   try {
-    const raw = localStorage.getItem('WSB_PRESETS');
+    const raw = safeGetLocalStorage('WSB_PRESETS');
     if (raw !== null) {
       presetsState = JSON.parse(raw);
     }
@@ -333,7 +358,7 @@ function loadPresetsFromLocalStorage() {
 }
 
 function savePresetsToLocalStorage() {
-  localStorage.setItem('WSB_PRESETS', JSON.stringify(presetsState));
+  safeSetLocalStorage('WSB_PRESETS', JSON.stringify(presetsState));
 }
 
 function renderPresetList(filter = '') {
