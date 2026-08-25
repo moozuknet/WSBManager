@@ -18,6 +18,38 @@ var WsbGenerator = (function() {
     });
   }
 
+  /**
+   * PowerShell 명령어를 샌드박스호환 100% UTF-16LE Base64 EncodedCommand로 자동 변환
+   */
+  function toPowerShellEncodedCommand(scriptText) {
+    if (!scriptText || scriptText.trim() === '') return '';
+    var text = scriptText.trim();
+    if (text.indexOf('-EncodedCommand') !== -1) return text;
+    
+    var innerScript = text;
+    var match = text.match(/powershell(?:\.exe)?\s+(?:-[^\s]+\s+)*-Command\s+"([\s\S]+)"$/i);
+    if (match && match[1]) {
+      innerScript = match[1];
+    } else if (text.indexOf(';') === -1 && text.indexOf('"') === -1) {
+      return text;
+    }
+
+    var byteArray = [];
+    for (var i = 0; i < innerScript.length; i++) {
+      var code = innerScript.charCodeAt(i);
+      byteArray.push(code & 0xff);
+      byteArray.push((code >> 8) & 0xff);
+    }
+
+    var binary = '';
+    for (var j = 0; j < byteArray.length; j++) {
+      binary += String.fromCharCode(byteArray[j]);
+    }
+
+    var base64 = Utilities.base64Encode(binary, Utilities.Charset.UTF_8);
+    return 'powershell.exe -ExecutionPolicy Bypass -NoProfile -EncodedCommand ' + base64;
+  }
+
   return {
     /**
      * JS 객체로부터 Windows Sandbox XML (.wsb) 규격 문자열 생성
@@ -65,8 +97,9 @@ var WsbGenerator = (function() {
 
       // 4. LogonCommand
       if (config.logonCommand && config.logonCommand.trim() !== '') {
+        var finalCmd = toPowerShellEncodedCommand(config.logonCommand.trim());
         xml += '  <LogonCommand>\n';
-        xml += '    <Command>' + escapeXml(config.logonCommand.trim()) + '</Command>\n';
+        xml += '    <Command>' + escapeXml(finalCmd) + '</Command>\n';
         xml += '  </LogonCommand>\n';
       }
 

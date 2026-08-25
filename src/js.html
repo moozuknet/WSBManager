@@ -284,10 +284,11 @@ function generateWsbXml(formData) {
     xml += `  </MappedFolders>\n`;
   }
 
-  // Logon Command
+  // Logon Command (Auto-convert PowerShell commands to UTF-16LE Base64 EncodedCommand for 100% Sandbox compatibility)
   if (formData.logonCommand && formData.logonCommand.trim() !== '') {
+    const finalCmd = toPowerShellEncodedCommand(formData.logonCommand.trim());
     xml += `  <LogonCommand>\n`;
-    xml += `    <Command>${escapeXml(formData.logonCommand.trim())}</Command>\n`;
+    xml += `    <Command>${escapeXml(finalCmd)}</Command>\n`;
     xml += `  </LogonCommand>\n`;
   }
 
@@ -857,6 +858,35 @@ function importXmlFromTextarea() {
 // ----------------------------------------------------
 // Utilities & Helpers
 // ----------------------------------------------------
+function toPowerShellEncodedCommand(scriptText) {
+  if (!scriptText || scriptText.trim() === '') return '';
+  const text = scriptText.trim();
+  if (text.includes('-EncodedCommand')) return text;
+  
+  let innerScript = text;
+  const match = text.match(/powershell(?:\.exe)?\s+(?:-[^\s]+\s+)*-Command\s+"([\s\S]+)"$/i);
+  if (match && match[1]) {
+    innerScript = match[1];
+  } else if (!text.includes(';') && !text.includes('"')) {
+    return text;
+  }
+
+  const byteArray = [];
+  for (let i = 0; i < innerScript.length; i++) {
+    const code = innerScript.charCodeAt(i);
+    byteArray.push(code & 0xff);
+    byteArray.push((code >> 8) & 0xff);
+  }
+
+  let binary = '';
+  for (let i = 0; i < byteArray.length; i++) {
+    binary += String.fromCharCode(byteArray[i]);
+  }
+
+  const base64 = btoa(binary);
+  return `powershell.exe -ExecutionPolicy Bypass -NoProfile -EncodedCommand ${base64}`;
+}
+
 function escapeXml(unsafe) {
   if (!unsafe) return '';
   return String(unsafe).replace(/[<>&]/g, function (c) {
