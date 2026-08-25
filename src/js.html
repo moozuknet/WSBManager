@@ -653,59 +653,90 @@ function exportPresetsJson() {
   showToast('프리셋 JSON 파일 내보내기가 완료되었습니다.', 'success');
 }
 
-function triggerImportJson() {
-  const fileInput = document.getElementById('importJsonFile');
-  if (fileInput) {
-    fileInput.value = '';
-    fileInput.click();
+function openImportJsonModal() {
+  const modal = document.getElementById('importJsonModal');
+  const fileNameEl = document.getElementById('importFileName');
+  const textAreaEl = document.getElementById('importJsonText');
+  if (modal) modal.classList.remove('hidden');
+  if (fileNameEl) fileNameEl.textContent = '선택된 파일 없음';
+  if (textAreaEl) textAreaEl.value = '';
+}
+
+function closeImportJsonModal() {
+  const modal = document.getElementById('importJsonModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function processImportedObject(imported, sourceName = 'JSON') {
+  if (typeof imported === 'object' && imported !== null && !Array.isArray(imported)) {
+    // Merge imported presets with presetsState
+    presetsState = Object.assign({}, presetsState, imported);
+    savePresetsToLocalStorage();
+
+    // Sync imported presets to Cloud (Chunking enabled)
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler((res) => {
+          showToast(`'${sourceName}' 프리셋 복원 및 클라우드 연동 완료!`, 'success');
+        })
+        .withFailureHandler((err) => {
+          showToast(`로컬 복원 완료 (클라우드: ${err ? err.message : ''})`, 'info');
+        })
+        .saveAllPresetsToCloud(presetsState);
+    } else {
+      showToast(`'${sourceName}' 프리셋이 성공적으로 복원되었습니다.`, 'success');
+    }
+
+    const keys = Object.keys(imported);
+    if (keys.length > 0) {
+      loadPreset(keys[0]);
+    } else {
+      renderPresetList();
+    }
+    closeImportJsonModal();
+    return true;
+  } else {
+    showToast('유효하지 않은 프리셋 JSON 포맷입니다.', 'error');
+    return false;
   }
 }
 
 function importPresetsJson(event) {
-  const files = event.target.files;
+  const files = event.target ? event.target.files : null;
   if (!files || files.length === 0) return;
 
   const file = files[0];
+  const fileNameEl = document.getElementById('importFileName');
+  if (fileNameEl) fileNameEl.textContent = file.name;
+
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const content = e.target.result;
       const imported = JSON.parse(content);
-
-      if (typeof imported === 'object' && imported !== null && !Array.isArray(imported)) {
-        // Merge imported presets with presetsState
-        presetsState = Object.assign({}, presetsState, imported);
-        savePresetsToLocalStorage();
-
-        // Sync imported presets to Cloud
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler((res) => {
-              showToast('프리셋 JSON 파일을 성공적으로 불러오고 클라우드에 연동했습니다.', 'success');
-            })
-            .withFailureHandler((err) => {
-              showToast('로컬 복원 완료 (클라우드 연동: ' + (err ? err.message : '') + ')', 'info');
-            })
-            .saveAllPresetsToCloud(presetsState);
-        } else {
-          showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
-        }
-
-        const keys = Object.keys(imported);
-        if (keys.length > 0) {
-          loadPreset(keys[0]);
-        } else {
-          renderPresetList();
-        }
-      } else {
-        showToast('유효하지 않은 프리셋 JSON 파일 포맷입니다.', 'error');
-      }
+      processImportedObject(imported, file.name);
     } catch (err) {
-      showToast('JSON 파일 읽기 실패: ' + err.message, 'error');
+      showToast('JSON 파일 파싱 실패: ' + err.message, 'error');
     }
-    event.target.value = ''; // Reset input element
+    if (event.target) event.target.value = '';
   };
   reader.readAsText(file);
+}
+
+function importPresetsFromText() {
+  const textEl = document.getElementById('importJsonText');
+  const text = textEl ? textEl.value.trim() : '';
+  if (!text) {
+    showToast('복원할 JSON 텍스트를 입력해주세요.', 'error');
+    return;
+  }
+
+  try {
+    const imported = JSON.parse(text);
+    processImportedObject(imported, '직접 입력한 텍스트');
+  } catch (err) {
+    showToast('JSON 텍스트 파싱 오류: ' + err.message, 'error');
+  }
 }
 
 // ----------------------------------------------------

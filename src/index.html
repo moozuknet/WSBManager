@@ -98,10 +98,9 @@
                 <i class="fa-solid fa-file-export"></i> 내보내기
               </button>
               <span>|</span>
-              <button onclick="triggerImportJson()" type="button" class="hover:text-slate-200 transition cursor-pointer" title="프리셋 JSON 불러오기">
+              <button onclick="openImportJsonModal()" type="button" class="hover:text-slate-200 transition cursor-pointer flex items-center gap-1" title="프리셋 JSON 불러오기">
                 <i class="fa-solid fa-file-import"></i> 가져오기
               </button>
-              <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" style="display:none !important;">
             </div>
           </div>
         </div>
@@ -337,6 +336,51 @@
       <div class="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-900/50">
         <span id="driveFolderNameInfo" class="text-xs text-slate-500"></span>
         <button onclick="closeDriveBackupModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
+      </div>
+    </div>
+  <!-- Import JSON Modal -->
+  <div id="importJsonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-card max-w-xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between p-4 border-b border-slate-800">
+        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
+          <i class="fa-solid fa-file-import text-sky-400"></i> 프리셋 JSON 불러오기 & 복원
+        </h3>
+        <button onclick="closeImportJsonModal()" class="text-slate-400 hover:text-slate-200 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto flex-1 space-y-5">
+        <!-- Option 1: File Upload -->
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-sky-300 uppercase tracking-wider">방법 1: 내 컴퓨터의 JSON 파일 선택</label>
+          <div class="flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+            <label for="importJsonFile" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition shadow">
+              <i class="fa-solid fa-folder-open"></i> .json 파일 찾기
+              <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" class="sr-only">
+            </label>
+            <span id="importFileName" class="text-xs text-slate-400 truncate">선택된 파일 없음</span>
+          </div>
+        </div>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-800"></div>
+          <span class="flex-shrink mx-3 text-slate-500 text-xs uppercase font-semibold">또는</span>
+          <div class="flex-grow border-t border-slate-800"></div>
+        </div>
+
+        <!-- Option 2: Paste JSON Text directly -->
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-sky-300 uppercase tracking-wider">방법 2: JSON 텍스트 직접 붙여넣기 (가장 확실한 방법)</label>
+          <textarea id="importJsonText" rows="6" placeholder="백업된 JSON 텍스트 내용 전체를 여기에 붙여넣으세요..." class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
+          <button onclick="importPresetsFromText()" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow transition">
+            <i class="fa-solid fa-check"></i> JSON 텍스트로 프리셋 복원하기
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end p-4 border-t border-slate-800 bg-slate-900/50">
+        <button onclick="closeImportJsonModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
       </div>
     </div>
   </div>
