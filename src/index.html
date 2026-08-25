@@ -291,7 +291,7 @@
   </div>
 
   <!-- XML Preview Modal -->
-  <div id="xmlModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+  <div id="xmlModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-card max-w-3xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-slate-800">
         <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
@@ -316,8 +316,10 @@
         </div>
       </div>
     </div>
+  </div>
+
   <!-- Drive Backup List & Restore Modal -->
-  <div id="driveBackupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+  <div id="driveBackupModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-card max-w-2xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between p-4 border-b border-slate-800">
         <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
@@ -338,8 +340,10 @@
         <button onclick="closeDriveBackupModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
       </div>
     </div>
+  </div>
+
   <!-- Import JSON Modal -->
-  <div id="importJsonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+  <div id="importJsonModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-card max-w-xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between p-4 border-b border-slate-800">
         <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
