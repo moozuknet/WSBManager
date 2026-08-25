@@ -28,6 +28,12 @@
 Windows Sandbox 설정 파일은 표준 XML 포맷으로 구성됩니다. GAS 웹 앱은 사용자의 입력을 받아 아래 구조의 `.wsb` XML 문자열을 생성해야 합니다.
 
 ```xml
+<!--
+  WSB Manager Web Generated Configuration
+  Preset Name : 개발자용 샌드박스 (VS Code & Winget)
+  Description : 보안 웹 서핑 및 개발 환경 테스트용
+  Generated At: 2026-08-26 00:30:00
+-->
 <Configuration>
   <!-- 1. 가상 GPU 활성화 여부: Enable, Disable, Default -->
   <VGpu>Enable</VGpu>

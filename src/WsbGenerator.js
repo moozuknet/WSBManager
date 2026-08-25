@@ -27,7 +27,14 @@ var WsbGenerator = (function() {
      * @return {string} XML 포맷 텍스트
      */
     generateXml: function(config) {
-      var xml = '<!-- WSB Manager Web Generated Config -->\n';
+      var xml = '<!--\n';
+      xml += '  WSB Manager Web Generated Configuration\n';
+      xml += '  Preset Name : ' + escapeXml(config.presetName || 'Custom Sandbox') + '\n';
+      if (config.presetDescription && config.presetDescription.trim() !== '') {
+        xml += '  Description : ' + escapeXml(config.presetDescription.trim()) + '\n';
+      }
+      xml += '  Generated At: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss') + '\n';
+      xml += '-->\n';
       xml += '<Configuration>\n';
 
       // 1. vGPU

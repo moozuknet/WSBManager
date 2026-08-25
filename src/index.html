@@ -108,18 +108,24 @@
         <form id="wsbForm" onsubmit="event.preventDefault();" class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
           
           <!-- Preset Info Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <div class="flex-1 space-y-1">
-              <label class="block text-xs font-semibold text-sky-400 uppercase tracking-wider">프리셋 이름 (Preset Name)</label>
-              <input type="text" id="presetName" placeholder="예: 개발용 샌드박스, 클린 브라우징 등" class="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-medium focus:outline-none transition">
+          <div class="space-y-3 pb-4 border-b border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex-1 space-y-1">
+                <label class="block text-xs font-semibold text-sky-400 uppercase tracking-wider">프리셋 이름 (Preset Name)</label>
+                <input type="text" id="presetName" placeholder="예: 개발용 샌드박스, 클린 브라우징 등" class="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-medium focus:outline-none transition">
+              </div>
+              <div class="flex items-center gap-2 self-end sm:self-center">
+                <button onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
+                  <i class="fa-solid fa-floppy-disk"></i> 프리셋 저장
+                </button>
+                <button onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2 self-end sm:self-center">
-              <button onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
-                <i class="fa-solid fa-floppy-disk"></i> 프리셋 저장
-              </button>
-              <button onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-400">프리셋 설명 및 메모 (Description / Notes)</label>
+              <input type="text" id="presetDescription" placeholder="예: 보안 웹 서핑 전용, Winget 개발환경 테스트용 (XML 주석 정보로 기록됨)" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-1.5 text-xs text-slate-200 focus:outline-none transition">
             </div>
           </div>
 

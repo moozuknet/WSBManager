@@ -17,6 +17,7 @@ function initDefaults() {
     const defaultPresets = {
       "기본 샌드박스 (Default)": {
         presetName: "기본 샌드박스 (Default)",
+        presetDescription: "표준 Windows Sandbox 기본 설정",
         vGpu: "Default",
         networking: "Default",
         memoryInMB: "",
@@ -32,6 +33,7 @@ function initDefaults() {
       },
       "개발자용 샌드박스 (VS Code & Winget)": {
         presetName: "개발자용 샌드박스 (VS Code & Winget)",
+        presetDescription: "VS Code 및 개발 도구 자동 설치 개발 환경",
         vGpu: "Enable",
         networking: "Default",
         memoryInMB: "8192",
@@ -68,6 +70,7 @@ function collectFormData() {
 
   return {
     presetName: document.getElementById('presetName').value.trim() || 'Custom Sandbox',
+    presetDescription: document.getElementById('presetDescription').value.trim(),
     vGpu: document.getElementById('vGpu').value,
     networking: document.getElementById('networking').value,
     memoryInMB: document.getElementById('memoryInMB').value,
@@ -83,6 +86,7 @@ function collectFormData() {
 
 function fillFormWithData(data) {
   document.getElementById('presetName').value = data.presetName || '';
+  document.getElementById('presetDescription').value = data.presetDescription || '';
   document.getElementById('vGpu').value = data.vGpu || 'Default';
   document.getElementById('networking').value = data.networking || 'Default';
   document.getElementById('memoryInMB').value = data.memoryInMB || '';
@@ -199,7 +203,15 @@ function applySnippetTemplate() {
 // XML Generation & Export
 // ----------------------------------------------------
 function generateWsbXml(formData) {
-  let xml = `<!-- WSB Manager Web Generated Config -->\n<Configuration>\n`;
+  let xml = `<!--\n`;
+  xml += `  WSB Manager Web Generated Configuration\n`;
+  xml += `  Preset Name : ${escapeXml(formData.presetName || 'Custom Sandbox')}\n`;
+  if (formData.presetDescription && formData.presetDescription.trim() !== '') {
+    xml += `  Description : ${escapeXml(formData.presetDescription.trim())}\n`;
+  }
+  xml += `  Generated At: ${new Date().toLocaleString('ko-KR')}\n`;
+  xml += `-->\n<Configuration>\n`;
+
   if (formData.vGpu) xml += `  <VGpu>${formData.vGpu}</VGpu>\n`;
   if (formData.networking) xml += `  <Networking>${formData.networking}</Networking>\n`;
 
@@ -313,7 +325,12 @@ function renderPresetList(filter = '') {
   if (!listEl) return;
   listEl.innerHTML = '';
 
-  const keys = Object.keys(presetsState).filter(k => k.toLowerCase().includes(filter.toLowerCase()));
+  const keys = Object.keys(presetsState).filter(k => {
+    const p = presetsState[k];
+    const matchName = k.toLowerCase().includes(filter.toLowerCase());
+    const matchDesc = p.presetDescription && p.presetDescription.toLowerCase().includes(filter.toLowerCase());
+    return matchName || matchDesc;
+  });
 
   if (keys.length === 0) {
     listEl.innerHTML = `<li class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-folder-open block text-xl mb-1 text-slate-600"></i>저장된 프리셋이 없습니다.</li>`;
@@ -325,9 +342,14 @@ function renderPresetList(filter = '') {
     const item = document.createElement('li');
     item.className = `preset-item glass-card-hover p-3 rounded-xl border border-slate-800 cursor-pointer flex items-center justify-between group ${isActive ? 'active' : ''}`;
     
+    const descText = presetsState[name].presetDescription ? escapeHtml(presetsState[name].presetDescription) : '';
+
     item.innerHTML = `
       <div class="flex-1 pr-2 truncate" onclick="loadPreset('${escapeJsString(name)}')">
-        <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate">${escapeHtml(name)}</div>
+        <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
+          ${escapeHtml(name)}
+        </div>
+        ${descText ? `<div class="text-[11px] text-sky-400/80 truncate mt-0.5 font-normal"><i class="fa-regular fa-comment-dots mr-1 text-[10px]"></i>${descText}</div>` : ''}
         <div class="text-[10px] text-slate-500 truncate mt-0.5">
           vGPU: ${presetsState[name].vGpu || 'Default'} | Net: ${presetsState[name].networking || 'Default'}
         </div>
@@ -353,6 +375,7 @@ function createNewPreset() {
   activePresetName = '';
   fillFormWithData({
     presetName: "새 프리셋 " + (Object.keys(presetsState).length + 1),
+    presetDescription: "",
     vGpu: "Default",
     networking: "Default",
     memoryInMB: "",
@@ -410,7 +433,6 @@ function deleteCurrentPreset() {
   if (targetName) {
     deletePresetByName(targetName);
   } else {
-    // If the form has unsaved content, just reset form
     activePresetName = '';
     createNewPreset();
     showToast('작성 중인 폼 내용이 초기화되었습니다.', 'info');
