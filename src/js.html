@@ -559,6 +559,86 @@ function backupDrive() {
   }
 }
 
+function openDriveBackupModal() {
+  const modal = document.getElementById('driveBackupModal');
+  const fileList = document.getElementById('driveBackupFileList');
+  const infoText = document.getElementById('driveFolderNameInfo');
+  modal.classList.remove('hidden');
+
+  fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Google Drive 백업 목록을 불러오는 중...</li>`;
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success && res.files) {
+          infoText.textContent = res.folderName ? `백업 위치: Google Drive [${res.folderName}]` : '';
+          if (res.files.length === 0) {
+            fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6">저장된 Drive 백업 파일이 없습니다.</li>`;
+            return;
+          }
+
+          fileList.innerHTML = '';
+          res.files.forEach(file => {
+            const sizeKb = (file.size / 1024).toFixed(1);
+            const li = document.createElement('li');
+            li.className = 'glass-card-hover p-3 rounded-xl border border-slate-800 flex items-center justify-between group';
+            li.innerHTML = `
+              <div class="flex-1 pr-2 truncate">
+                <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-code text-emerald-400 text-xs"></i>
+                  ${escapeHtml(file.name)}
+                </div>
+                <div class="text-[10px] text-slate-500 truncate mt-0.5">
+                  생성일시: ${escapeHtml(file.updatedAt)} | 크기: ${sizeKb} KB
+                </div>
+              </div>
+              <button onclick="restoreFromDriveFile('${escapeJsString(file.id)}')" type="button" class="bg-sky-600/20 hover:bg-sky-600/40 text-sky-300 border border-sky-500/30 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                <i class="fa-solid fa-cloud-arrow-down"></i> 복원
+              </button>
+            `;
+            fileList.appendChild(li);
+          });
+        } else {
+          fileList.innerHTML = `<li class="text-xs text-rose-400 text-center py-6">백업 목록 로드 실패: ${escapeHtml(res ? res.error : '')}</li>`;
+        }
+      })
+      .listDriveBackups();
+  } else {
+    fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6">GAS 연결 환경에서만 Google Drive 백업 목록 조회가 가능합니다.</li>`;
+  }
+}
+
+function closeDriveBackupModal() {
+  document.getElementById('driveBackupModal').classList.add('hidden');
+}
+
+function restoreFromDriveFile(fileId) {
+  if (confirm('선택한 Drive 백업 파일에서 프리셋을 복원하시겠습니까? (기존 프리셋 병합)')) {
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      showToast('Drive 백업 파일에서 복원 중...', 'info');
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (res && res.success && res.data) {
+            presetsState = Object.assign({}, presetsState, res.data);
+            savePresetsToLocalStorage();
+            
+            const keys = Object.keys(res.data);
+            if (keys.length > 0) {
+              loadPreset(keys[0]);
+            } else {
+              renderPresetList();
+            }
+            closeDriveBackupModal();
+            showToast(res.message, 'success');
+          } else {
+            showToast(res ? res.error : '복원 실패', 'error');
+          }
+        })
+        .importFromDriveFile(fileId);
+    }
+  }
+}
+
 // ----------------------------------------------------
 // Import / Export JSON Local Files
 // ----------------------------------------------------
@@ -581,15 +661,34 @@ function importPresetsJson(event) {
   reader.onload = function(e) {
     try {
       const imported = JSON.parse(e.target.result);
-      if (typeof imported === 'object') {
+      if (typeof imported === 'object' && imported !== null) {
         presetsState = Object.assign({}, presetsState, imported);
         savePresetsToLocalStorage();
-        renderPresetList();
-        showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
+
+        // Sync imported presets to Cloud so silent sync won't overwrite them
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler((res) => {
+              showToast('프리셋 JSON 파일을 복원하고 클라우드에 연동했습니다.', 'success');
+            })
+            .saveAllPresetsToCloud(presetsState);
+        } else {
+          showToast('프리셋 JSON 파일을 성공적으로 복원했습니다.', 'success');
+        }
+
+        const keys = Object.keys(imported);
+        if (keys.length > 0) {
+          loadPreset(keys[0]);
+        } else {
+          renderPresetList();
+        }
+      } else {
+        showToast('유효한 프리셋 JSON 파일이 아닙니다.', 'error');
       }
     } catch (err) {
-      showToast('올바르지 않은 JSON 파일 포맷입니다.', 'error');
+      showToast('올바르지 않은 JSON 파일 포맷입니다: ' + err.message, 'error');
     }
+    event.target.value = ''; // Reset input element so user can choose same file again if needed
   };
   reader.readAsText(file);
 }

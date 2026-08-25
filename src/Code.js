@@ -72,3 +72,24 @@ function clearAllPresetsFromCloud() {
 function exportPresetsToDrive() {
   return StorageService.exportToDrive();
 }
+
+/**
+ * 전체 프리셋 객체 일괄 저장
+ */
+function saveAllPresetsToCloud(presetsMap) {
+  return StorageService.saveAllPresets(presetsMap);
+}
+
+/**
+ * Google Drive 폴더 내 저장된 백업 파일 목록 조회
+ */
+function listDriveBackups() {
+  return StorageService.listDriveBackups();
+}
+
+/**
+ * Google Drive 파일 ID로 백업 복원
+ */
+function importFromDriveFile(fileId) {
+  return StorageService.importFromDriveFile(fileId);
+}
