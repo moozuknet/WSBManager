@@ -6,24 +6,11 @@ var StorageService = (function() {
   var STORAGE_KEY = 'WSB_PRESETS_V1';
 
   /**
-   * 저장소에서 전체 프리셋 JSON 파싱 후 반환 (청크 처리 지원)
+   * 저장소에서 전체 프리셋 JSON 파싱 후 반환
    */
   function _loadPresets() {
     try {
       var userProps = PropertiesService.getUserProperties();
-      var totalChunksStr = userProps.getProperty(STORAGE_KEY + '_TOTAL_CHUNKS');
-      
-      if (totalChunksStr) {
-        var totalChunks = parseInt(totalChunksStr, 10);
-        var jsonStr = '';
-        for (var c = 0; c < totalChunks; c++) {
-          var chunk = userProps.getProperty(STORAGE_KEY + '_CHUNK_' + c);
-          if (chunk) jsonStr += chunk;
-        }
-        return jsonStr ? JSON.parse(jsonStr) : {};
-      }
-
-      // 레거시 단일 속성 하위 호환
       var data = userProps.getProperty(STORAGE_KEY);
       return data ? JSON.parse(data) : {};
     } catch (e) {
@@ -33,30 +20,11 @@ var StorageService = (function() {
   }
 
   /**
-   * 프리셋 전체 저장 (PropertiesService 9KB 제한 해제를 위한 청크 분할 저장)
+   * 프리셋 전체 저장
    */
   function _savePresetsMap(presetsMap) {
     var userProps = PropertiesService.getUserProperties();
-    var jsonStr = JSON.stringify(presetsMap);
-
-    // 기존 단일 및 청크 속성 초기화
-    userProps.removeProperty(STORAGE_KEY);
-    var keys = userProps.getKeys();
-    for (var i = 0; i < keys.length; i++) {
-      if (keys[i].indexOf(STORAGE_KEY + '_CHUNK_') === 0) {
-        userProps.removeProperty(keys[i]);
-      }
-    }
-
-    // 8000 자 단위 청크 분할 (안전 범위)
-    var chunkSize = 8000;
-    var totalChunks = Math.ceil(jsonStr.length / chunkSize);
-    userProps.setProperty(STORAGE_KEY + '_TOTAL_CHUNKS', String(totalChunks));
-
-    for (var c = 0; c < totalChunks; c++) {
-      var chunk = jsonStr.substring(c * chunkSize, (c + 1) * chunkSize);
-      userProps.setProperty(STORAGE_KEY + '_CHUNK_' + c, chunk);
-    }
+    userProps.setProperty(STORAGE_KEY, JSON.stringify(presetsMap));
   }
 
   return {
@@ -154,21 +122,6 @@ var StorageService = (function() {
     },
 
     /**
-     * 전체 프리셋 Map 객체 일괄 클라우드 저장
-     */
-    saveAllPresets: function(presetsMap) {
-      try {
-        if (typeof presetsMap !== 'object' || presetsMap === null) {
-          return { success: false, error: '유효한 프리셋 데이터가 아닙니다.' };
-        }
-        _savePresetsMap(presetsMap);
-        return { success: true, message: '모든 프리셋이 클라우드에 일괄 저장되었습니다.' };
-      } catch (err) {
-        return { success: false, error: err.toString() };
-      }
-    },
-
-    /**
      * Google Drive에 JSON 백업 파일 생성 (스크립트 전용 폴더에 저장)
      */
     exportToDrive: function() {
@@ -189,64 +142,6 @@ var StorageService = (function() {
         };
       } catch (err) {
         return { success: false, error: 'Google Drive 백업 실패: ' + err.toString() };
-      }
-    },
-
-    /**
-     * Google Drive 지정 폴더 내에 저장된 백업 JSON 파일 목록 조회
-     */
-    listDriveBackups: function() {
-      try {
-        var targetFolder = this.getDestinationFolder();
-        var files = targetFolder.getFiles();
-        var list = [];
-        while (files.hasNext()) {
-          var file = files.next();
-          var name = file.getName();
-          if (name.indexOf('wsb_presets_backup_') === 0 || name.indexOf('.json') !== -1) {
-            list.push({
-              id: file.getId(),
-              name: file.getName(),
-              size: file.getSize(),
-              updatedAt: Utilities.formatDate(file.getLastUpdated(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'),
-              url: file.getUrl()
-            });
-          }
-        }
-        // 내림차순 정렬 (최신 파일이 위로)
-        list.sort(function(a, b) {
-          return b.updatedAt.localeCompare(a.updatedAt);
-        });
-        return { success: true, files: list, folderName: targetFolder.getName() };
-      } catch (err) {
-        return { success: false, error: 'Drive 백업 목록 조회 실패: ' + err.toString(), files: [] };
-      }
-    },
-
-    /**
-     * Google Drive 파일 ID로부터 JSON 백업 읽어와 프리셋 복원
-     */
-    importFromDriveFile: function(fileId) {
-      try {
-        var file = DriveApp.getFileById(fileId);
-        var content = file.getBlob().getDataAsString('UTF-8');
-        var imported = JSON.parse(content);
-
-        if (typeof imported === 'object' && imported !== null) {
-          var currentPresets = _loadPresets();
-          var merged = Object.assign({}, currentPresets, imported);
-          _savePresetsMap(merged);
-          return {
-            success: true,
-            data: merged,
-            fileName: file.getName(),
-            message: '\'' + file.getName() + '\' 파일에서 프리셋이 복원되었습니다.'
-          };
-        } else {
-          return { success: false, error: '유효한 프리셋 JSON 파일 포맷이 아닙니다.' };
-        }
-      } catch (err) {
-        return { success: false, error: 'Drive 백업 복원 실패: ' + err.toString() };
       }
     }
   };

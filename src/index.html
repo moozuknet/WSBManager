@@ -31,7 +31,7 @@
           <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300 flex items-center gap-2">
             WSB Manager Web
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-medium">GAS Edition</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.20-LIVE</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.25-RESTORED</span>
           </h1>
           <p class="text-xs sm:text-sm text-slate-400">Windows Sandbox (.wsb) 설정 관리 및 원클릭 XML 빌더</p>
         </div>
@@ -39,26 +39,22 @@
 
       <!-- Main Action Buttons -->
       <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-        <button id="btnPreviewXml" onclick="previewWsbXml()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition active:scale-95 shadow">
+        <button onclick="previewWsbXml()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition active:scale-95 shadow">
           <i class="fa-solid fa-code text-sky-400"></i> XML 미리보기
         </button>
 
-        <button id="btnExportWsb" onclick="exportWsbFile()" type="button" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition active:scale-95">
+        <button onclick="exportWsbFile()" type="button" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition active:scale-95">
           <i class="fa-solid fa-download"></i> .wsb 다운로드
         </button>
 
         <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
 
-        <button id="btnSyncCloud" onclick="syncCloudPresets()" type="button" title="구글 클라우드와 프리셋 동기화" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 p-2 rounded-xl text-xs sm:text-sm transition">
+        <button onclick="syncCloudPresets()" type="button" title="구글 클라우드와 프리셋 동기화" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 p-2 rounded-xl text-xs sm:text-sm transition">
           <i class="fa-solid fa-rotate text-sky-400"></i>
         </button>
 
-        <button id="btnBackupDrive" onclick="backupDrive()" type="button" title="Google Drive 백업 파일 생성" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+        <button onclick="backupDrive()" type="button" title="Google Drive 백업 파일 생성" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
           <i class="fa-brands fa-google-drive"></i> Drive 백업
-        </button>
-
-        <button id="btnRestoreDrive" onclick="openDriveBackupModal()" type="button" title="Google Drive 백업 파일 목록에서 복원" class="bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Drive 복원
         </button>
       </div>
     </header>
@@ -73,7 +69,7 @@
             <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm sm:text-base">
               <i class="fa-solid fa-bookmark text-sky-400"></i> 저장된 프리셋 목록
             </h2>
-            <button id="btnNewPreset" onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
+            <button onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
               <i class="fa-solid fa-plus"></i> 신규 작성
             </button>
           </div>
@@ -95,13 +91,14 @@
               <span id="syncBadge" class="w-2 h-2 rounded-full bg-emerald-500"></span> Local / Cloud Sync
             </span>
             <div class="flex items-center gap-2">
-              <button id="btnExportJson" onclick="exportPresetsJson()" type="button" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
+              <button onclick="exportPresetsJson()" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
                 <i class="fa-solid fa-file-export"></i> 내보내기
               </button>
               <span>|</span>
-              <button id="btnImportJson" onclick="openImportJsonModal()" type="button" class="hover:text-slate-200 transition cursor-pointer flex items-center gap-1" title="프리셋 JSON 불러오기">
+              <label class="hover:text-slate-200 transition cursor-pointer" title="프리셋 JSON 불러오기">
                 <i class="fa-solid fa-file-import"></i> 가져오기
-              </button>
+                <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" class="hidden">
+              </label>
             </div>
           </div>
         </div>
@@ -119,10 +116,10 @@
                 <input type="text" id="presetName" placeholder="예: 개발용 샌드박스, 클린 브라우징 등" class="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-medium focus:outline-none transition">
               </div>
               <div class="flex items-center gap-2 self-end sm:self-center">
-                <button id="btnSavePreset" onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
+                <button onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
                   <i class="fa-solid fa-floppy-disk"></i> 프리셋 저장
                 </button>
-                <button id="btnDeletePreset" onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
+                <button onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -243,7 +240,7 @@
                 <button type="button" onclick="addDefaultDownloadsFolder()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg transition">
                   <i class="fa-solid fa-folder-plus text-amber-400 mr-1"></i> Public Downloads 추가
                 </button>
-                <button id="btnAddFolder" type="button" onclick="addFolderRow()" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition font-medium">
+                <button type="button" onclick="addFolderRow()" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition font-medium">
                   + 폴더 추가
                 </button>
               </div>
@@ -264,25 +261,19 @@
 
               <!-- Snippet Template Selector -->
               <div class="flex items-center gap-2">
-                <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none max-w-[280px] truncate">
+                <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none">
                   <option value="" selected>⚡ 빠른 스크립트 템플릿 선택...</option>
-                  <optgroup label="Direct Installer (Sandbox 100% 호환)">
-                    <option value="direct-chrome">⚡ Google Chrome 무소음 자동 설치</option>
-                    <option value="direct-vscode">⚡ VS Code 무소음 자동 설치</option>
-                    <option value="direct-7zip">⚡ 7-Zip 무소음 자동 설치</option>
-                    <option value="direct-git">⚡ Git for Windows 무소음 설치</option>
-                    <option value="direct-dev-pack">🚀 개발자 툴 팩 (Chrome + VS Code + 7-Zip)</option>
-                  </optgroup>
-                  <optgroup label="Winget & 유틸리티 스크립트">
-                    <option value="winget-bootstrap">📦 Winget 부트스트랩 후 Chrome 설치</option>
-                    <option value="open-browser">🌐 샌드박스 시작 시 웹사이트 열기 (cmd)</option>
-                    <option value="ps1-desktop">📜 Desktop의 init.ps1 스크립트 실행</option>
-                  </optgroup>
+                  <option value="winget-chrome">Winget: Google Chrome 자동 설치</option>
+                  <option value="winget-vscode">Winget: VS Code 자동 설치</option>
+                  <option value="winget-git">Winget: Git 설치</option>
+                  <option value="winget-dev-pack">Winget: 필수 툴 팩 (7-Zip + Notepad++ + Chrome)</option>
+                  <option value="open-browser">cmd: 샌드박스 시작 시 특정 웹사이트 열기</option>
+                  <option value="ps1-desktop">powershell: Desktop의 init.ps1 실행</option>
                 </select>
               </div>
             </div>
 
-            <textarea id="logonCommand" rows="3" placeholder="샌드박스 부팅 시 자동 실행할 명령어를 입력하세요.&#10;예: cmd.exe /c &quot;curl.exe -sSL -o %TEMP%\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi &amp;&amp; msiexec.exe /i %TEMP%\chrome.msi /qn&quot;" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
+            <textarea id="logonCommand" rows="3" placeholder="샌드박스 부팅 시 자동 실행할 명령어를 입력하세요.&#10;예: powershell.exe -ExecutionPolicy Bypass -Command &quot;winget install -e --id Google.Chrome&quot;" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
           </div>
 
         </form>
@@ -292,7 +283,7 @@
   </div>
 
   <!-- XML Preview Modal -->
-  <div id="xmlModal" style="display: none !important; pointer-events: none !important;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+  <div id="xmlModal" style="display: none !important;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
     <div class="glass-card max-w-3xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-slate-800">
         <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
@@ -315,102 +306,6 @@
             <i class="fa-solid fa-download"></i> 파일 다운로드
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Drive Backup List & Restore Modal -->
-  <div id="driveBackupModal" style="display: none !important; pointer-events: none !important;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="glass-card max-w-2xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between p-4 border-b border-slate-800">
-        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
-          <i class="fa-brands fa-google-drive text-emerald-400"></i> Google Drive 백업 목록에서 복원
-        </h3>
-        <button onclick="closeDriveBackupModal()" class="text-slate-400 hover:text-slate-200 transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div class="p-4 overflow-y-auto flex-1 space-y-3">
-        <p class="text-xs text-slate-400">Google Drive 지정 폴더에 보관된 백업 파일입니다. 복원할 백업을 클릭하세요.</p>
-        <ul id="driveBackupFileList" class="space-y-2">
-          <li class="text-xs text-slate-500 text-center py-6">백업 파일 목록을 불러오는 중...</li>
-        </ul>
-      </div>
-      <div class="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-900/50">
-        <span id="driveFolderNameInfo" class="text-xs text-slate-500"></span>
-        <button onclick="closeDriveBackupModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Import JSON Modal -->
-  <div id="importJsonModal" style="display: none !important; pointer-events: none !important;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="glass-card max-w-xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between p-4 border-b border-slate-800">
-        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
-          <i class="fa-solid fa-file-import text-sky-400"></i> 프리셋 JSON 불러오기 & 복원
-        </h3>
-        <button onclick="closeImportJsonModal()" class="text-slate-400 hover:text-slate-200 transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="p-5 overflow-y-auto flex-1 space-y-5">
-        <!-- Option 1: File Upload -->
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold text-sky-300 uppercase tracking-wider">방법 1: 내 컴퓨터의 JSON 파일 선택</label>
-          <div class="flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-            <label for="importJsonFile" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition shadow">
-              <i class="fa-solid fa-folder-open"></i> .json 파일 찾기
-              <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" class="sr-only">
-            </label>
-            <span id="importFileName" class="text-xs text-slate-400 truncate">선택된 파일 없음</span>
-          </div>
-        </div>
-
-        <div class="relative flex py-1 items-center">
-          <div class="flex-grow border-t border-slate-800"></div>
-          <span class="flex-shrink mx-3 text-slate-500 text-xs uppercase font-semibold">또는</span>
-          <div class="flex-grow border-t border-slate-800"></div>
-        </div>
-
-        <!-- Option 2: Paste JSON Text directly -->
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold text-sky-300 uppercase tracking-wider">방법 2: JSON 텍스트 직접 붙여넣기 (가장 확실한 방법)</label>
-          <textarea id="importJsonText" rows="6" placeholder="백업된 JSON 텍스트 내용 전체를 여기에 붙여넣으세요..." class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
-          <button onclick="importPresetsFromText()" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow transition">
-            <i class="fa-solid fa-check"></i> JSON 텍스트로 프리셋 복원하기
-          </button>
-        </div>
-      </div>
-
-      <div class="flex justify-end p-4 border-t border-slate-800 bg-slate-900/50">
-        <button onclick="closeImportJsonModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Floating Live Debug Console Panel -->
-  <div id="debugConsoleContainer" class="fixed bottom-3 right-3 z-50 max-w-lg w-full px-3 pointer-events-auto">
-    <div class="glass-card bg-slate-950/95 border border-sky-500/40 rounded-2xl shadow-2xl overflow-hidden font-code text-xs">
-      <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800">
-        <span class="font-bold text-sky-400 flex items-center gap-2">
-          <i class="fa-solid fa-bug text-amber-400"></i> 실시간 디버거 (Live Debugger)
-        </span>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="copyDebugLog()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition" title="디버그 로그 복사">
-            <i class="fa-solid fa-copy mr-1"></i>복사
-          </button>
-          <button type="button" onclick="clearDebugLog()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition" title="로그 지우기">
-            <i class="fa-solid fa-trash-can mr-1"></i>지우기
-          </button>
-          <button type="button" onclick="toggleDebugConsole()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition">
-            <i id="debugToggleIcon" class="fa-solid fa-chevron-down"></i>
-          </button>
-        </div>
-      </div>
-      <div id="debugLogBody" class="p-3 max-h-48 overflow-y-auto space-y-1.5 text-[11px] text-slate-300 leading-relaxed bg-slate-950">
-        <div class="text-slate-500 italic">[디버거가 준비되었습니다. 화면의 버튼을 클릭하면 로그가 표시됩니다.]</div>
       </div>
     </div>
   </div>

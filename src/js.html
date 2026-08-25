@@ -1,156 +1,18 @@
 <script>
-// ====================================================
-// Live On-Screen Debug Console System
-// ====================================================
-const debugLogs = [];
-
-function addDebugLog(msg, type = 'info') {
-  const time = new Date().toTimeString().split(' ')[0];
-  const entry = `[${time}] ${msg}`;
-  debugLogs.push(entry);
-
-  const logBody = document.getElementById('debugLogBody');
-  if (logBody) {
-    const div = document.createElement('div');
-    let style = 'text-slate-300';
-    let prefix = 'ℹ️';
-    if (type === 'error') {
-      style = 'text-rose-400 font-semibold bg-rose-950/40 p-1.5 rounded border border-rose-800/40';
-      prefix = '❌';
-    } else if (type === 'warn') {
-      style = 'text-amber-300';
-      prefix = '⚠️';
-    } else if (type === 'click') {
-      style = 'text-sky-300 font-medium bg-sky-950/40 p-1.5 rounded border border-sky-800/40';
-      prefix = '🖱️';
-    } else if (type === 'success') {
-      style = 'text-emerald-300';
-      prefix = '✅';
-    }
-
-    div.className = style;
-    div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${prefix} ${escapeHtml(msg)}`;
-    logBody.appendChild(div);
-    logBody.scrollTop = logBody.scrollHeight;
-  }
-}
-
-// Global Exception & Event Interceptors
-window.onerror = function(message, source, lineno, colno, error) {
-  addDebugLog(`Script Error: ${message} (Line ${lineno}:${colno})`, 'error');
-  return false;
-};
-
-window.addEventListener('unhandledrejection', function(event) {
-  addDebugLog(`Unhandled Promise Rejection: ${event.reason}`, 'error');
-});
-
-// Capture Phase Global Click Tracker (Guarantees capturing all clicks)
-document.addEventListener('click', function(e) {
-  try {
-    const target = e.target;
-    const btn = target.closest('button, a, select, input, [onclick]');
-    if (btn) {
-      const idStr = btn.id ? `#${btn.id}` : '';
-      const textStr = (btn.innerText || btn.value || btn.title || 'element').trim().slice(0, 30);
-      const onclickAttr = btn.getAttribute('onclick') ? ` [onclick="${btn.getAttribute('onclick')}"]` : '';
-      addDebugLog(`클릭 감지: <${btn.tagName.toLowerCase()}${idStr}> "${textStr}"${onclickAttr}`, 'click');
-    } else {
-      addDebugLog(`배경 클릭: <${target.tagName.toLowerCase()}>`, 'info');
-    }
-  } catch (err) {
-    addDebugLog(`Click tracker error: ${err.message}`, 'warn');
-  }
-}, true);
-
-function toggleDebugConsole() {
-  const body = document.getElementById('debugLogBody');
-  const icon = document.getElementById('debugToggleIcon');
-  if (body) {
-    if (body.style.display === 'none') {
-      body.style.display = 'block';
-      if (icon) icon.className = 'fa-solid fa-chevron-down';
-    } else {
-      body.style.display = 'none';
-      if (icon) icon.className = 'fa-solid fa-chevron-up';
-    }
-  }
-}
-
-function clearDebugLog() {
-  debugLogs.length = 0;
-  const logBody = document.getElementById('debugLogBody');
-  if (logBody) logBody.innerHTML = '<div class="text-slate-500 italic">[로그가 초기화되었습니다.]</div>';
-}
-
-function copyDebugLog() {
-  const text = debugLogs.join('\n');
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      addDebugLog('로그가 클립보드에 복사되었습니다.', 'success');
-    }).catch(err => {
-      addDebugLog('복사 실패: ' + err, 'error');
-    });
-  } else {
-    prompt('Ctrl+C를 눌러 디버그 로그를 복사하세요:', text);
-  }
-}
-
-window.toggleDebugConsole = toggleDebugConsole;
-window.clearDebugLog = clearDebugLog;
-window.copyDebugLog = copyDebugLog;
-
 // State Management
 let presetsState = {};
 let activePresetName = '';
 
-// Safe localStorage wrapper for iframe compatibility (avoids SecurityError in blocked third-party storage)
-const memoryStorageFallback = {};
-
-function safeGetLocalStorage(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch (e) {
-    console.warn('localStorage getItem blocked, using memory storage fallback:', e);
-    return memoryStorageFallback[key] !== undefined ? memoryStorageFallback[key] : null;
-  }
-}
-
-function safeSetLocalStorage(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch (e) {
-    console.warn('localStorage setItem blocked, using memory storage fallback:', e);
-    memoryStorageFallback[key] = String(value);
-  }
-}
-
-// Initial load on DOM ready (Immediate execution fallback for GAS iframe)
-function bootApp() {
-  try {
-    addDebugLog('앱 부팅 시작 (bootApp)...', 'info');
-    bindWindowGlobals();
-    addDebugLog('전역 Window 함수 바인딩 완료', 'success');
-    bindAllEvents();
-    addDebugLog('이중 이벤트 리스너(addEventListener) 바인딩 완료', 'success');
-    initDefaults();
-    loadPresetsFromLocalStorage();
-    addDebugLog('프리셋 로드 완료', 'success');
-    syncCloudPresetsSilently();
-  } catch (err) {
-    addDebugLog(`부팅 중 오류 발생: ${err.message}`, 'error');
-  }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootApp);
-} else {
-  bootApp();
-}
+// Initial load on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  initDefaults();
+  loadPresetsFromLocalStorage();
+  syncCloudPresetsSilently();
+});
 
 // Default Presets initialization if empty
 function initDefaults() {
-  const localData = safeGetLocalStorage('WSB_PRESETS');
+  const localData = localStorage.getItem('WSB_PRESETS');
   if (localData === null) {
     const defaultPresets = {
       "기본 샌드박스 (Default)": {
@@ -183,7 +45,7 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
         ],
-        logonCommand: `cmd.exe /c "curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart"`
+        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`
       }
     };
     presetsState = defaultPresets;
@@ -310,23 +172,17 @@ function applySnippetTemplate() {
   let snippet = '';
 
   switch (val) {
-    case 'direct-chrome':
-      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi && msiexec.exe /i %TEMP%\\chrome.msi /qn"`;
+    case 'winget-chrome':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
       break;
-    case 'direct-vscode':
-      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart"`;
+    case 'winget-vscode':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
       break;
-    case 'direct-7zip':
-      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\7z.exe https://www.7-zip.org/a/7z2408-x64.exe && %TEMP%\\7z.exe /S"`;
+    case 'winget-git':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements"`;
       break;
-    case 'direct-git':
-      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\git.exe https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe && %TEMP%\\git.exe /VERYSILENT /NORESTART"`;
-      break;
-    case 'direct-dev-pack':
-      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi && msiexec.exe /i %TEMP%\\chrome.msi /qn && curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart && curl.exe -sSL -o %TEMP%\\7z.exe https://www.7-zip.org/a/7z2408-x64.exe && %TEMP%\\7z.exe /S"`;
-      break;
-    case 'winget-bootstrap':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/microsoft/winget-cli/master/build/assets/bootstrap.ps1 | iex; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
+    case 'winget-dev-pack':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id 7zip.7zip --accept-package-agreements; winget install -e --id Notepad++.Notepad++ --accept-package-agreements; winget install -e --id Google.Chrome --accept-package-agreements"`;
       break;
     case 'open-browser':
       snippet = `cmd.exe /c start https://google.com`;
@@ -400,56 +256,41 @@ function generateWsbXml(formData) {
 }
 
 function exportWsbFile() {
-  addDebugLog('exportWsbFile 실행됨', 'info');
-  try {
-    const formData = collectFormData();
-    const xmlContent = generateWsbXml(formData);
-    const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8;' });
-    
-    const sanitizedFilename = (formData.presetName || 'sandbox_config').replace(/[/\\?%*:|"<>]/g, '_');
-    const filename = `${sanitizedFilename}.wsb`;
+  const formData = collectFormData();
+  const xmlContent = generateWsbXml(formData);
+  const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8;' });
+  
+  const sanitizedFilename = (formData.presetName || 'sandbox_config').replace(/[/\\?%*:|"<>]/g, '_');
+  const filename = `${sanitizedFilename}.wsb`;
 
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 
-    showToast(`'${filename}' 파일 다운로드가 시작되었습니다.`, 'success');
-    addDebugLog(`.wsb 파일 다운로드 완료: ${filename}`, 'success');
-  } catch (err) {
-    addDebugLog(`.wsb 다운로드 중 오류: ${err.message}`, 'error');
-  }
+  showToast(`'${filename}' 파일 다운로드가 시작되었습니다.`, 'success');
 }
 
 function previewWsbXml() {
-  addDebugLog('previewWsbXml 실행됨', 'info');
-  try {
-    const formData = collectFormData();
-    const xmlContent = generateWsbXml(formData);
-    const modalContent = document.getElementById('xmlModalContent');
-    if (modalContent) modalContent.textContent = xmlContent;
-    
-    const modal = document.getElementById('xmlModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      modal.classList.remove('hidden');
-      addDebugLog('XML 미리보기 모달 표시 성공 (display: flex)', 'success');
-    } else {
-      addDebugLog('#xmlModal 모달 요소를 찾을 수 없습니다.', 'error');
-    }
-  } catch (err) {
-    addDebugLog(`previewWsbXml 처리 중 오류: ${err.message}`, 'error');
+  const formData = collectFormData();
+  const xmlContent = generateWsbXml(formData);
+  document.getElementById('xmlModalContent').textContent = xmlContent;
+  const modal = document.getElementById('xmlModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
   }
 }
 
 function closeXmlModal() {
-  addDebugLog('closeXmlModal 실행됨', 'info');
   const modal = document.getElementById('xmlModal');
   if (modal) {
-    modal.style.display = 'none';
     modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.display = 'none';
   }
 }
 
@@ -467,7 +308,7 @@ function copyXmlToClipboard() {
 // ----------------------------------------------------
 function loadPresetsFromLocalStorage() {
   try {
-    const raw = safeGetLocalStorage('WSB_PRESETS');
+    const raw = localStorage.getItem('WSB_PRESETS');
     if (raw !== null) {
       presetsState = JSON.parse(raw);
     }
@@ -486,7 +327,7 @@ function loadPresetsFromLocalStorage() {
 }
 
 function savePresetsToLocalStorage() {
-  safeSetLocalStorage('WSB_PRESETS', JSON.stringify(presetsState));
+  localStorage.setItem('WSB_PRESETS', JSON.stringify(presetsState));
 }
 
 function renderPresetList(filter = '') {
@@ -722,100 +563,6 @@ function backupDrive() {
   }
 }
 
-function openDriveBackupModal() {
-  addDebugLog('openDriveBackupModal 실행됨', 'info');
-  const modal = document.getElementById('driveBackupModal');
-  const fileList = document.getElementById('driveBackupFileList');
-  const infoText = document.getElementById('driveFolderNameInfo');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('pointer-events', 'auto', 'important');
-    addDebugLog('driveBackupModal 표시 (display: flex)', 'success');
-  }
-
-  fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Google Drive 백업 목록을 불러오는 중...</li>`;
-
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler((res) => {
-        if (res && res.success && res.files) {
-          infoText.textContent = res.folderName ? `백업 위치: Google Drive [${res.folderName}]` : '';
-          if (res.files.length === 0) {
-            fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6">저장된 Drive 백업 파일이 없습니다.</li>`;
-            return;
-          }
-
-          fileList.innerHTML = '';
-          res.files.forEach(file => {
-            const sizeKb = (file.size / 1024).toFixed(1);
-            const li = document.createElement('li');
-            li.className = 'glass-card-hover p-3 rounded-xl border border-slate-800 flex items-center justify-between group';
-            li.innerHTML = `
-              <div class="flex-1 pr-2 truncate">
-                <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
-                  <i class="fa-solid fa-file-code text-emerald-400 text-xs"></i>
-                  ${escapeHtml(file.name)}
-                </div>
-                <div class="text-[10px] text-slate-500 truncate mt-0.5">
-                  생성일시: ${escapeHtml(file.updatedAt)} | 크기: ${sizeKb} KB
-                </div>
-              </div>
-              <button onclick="restoreFromDriveFile('${escapeJsString(file.id)}')" type="button" class="bg-sky-600/20 hover:bg-sky-600/40 text-sky-300 border border-sky-500/30 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                <i class="fa-solid fa-cloud-arrow-down"></i> 복원
-              </button>
-            `;
-            fileList.appendChild(li);
-          });
-        } else {
-          fileList.innerHTML = `<li class="text-xs text-rose-400 text-center py-6">백업 목록 로드 실패: ${escapeHtml(res ? res.error : '')}</li>`;
-        }
-      })
-      .listDriveBackups();
-  } else {
-    fileList.innerHTML = `<li class="text-xs text-slate-500 text-center py-6">GAS 연결 환경에서만 Google Drive 백업 목록 조회가 가능합니다.</li>`;
-  }
-}
-
-function closeDriveBackupModal() {
-  addDebugLog('closeDriveBackupModal 실행됨', 'info');
-  const modal = document.getElementById('driveBackupModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    modal.style.setProperty('display', 'none', 'important');
-    modal.style.setProperty('pointer-events', 'none', 'important');
-  }
-}
-
-function restoreFromDriveFile(fileId) {
-  if (confirm('선택한 Drive 백업 파일에서 프리셋을 복원하시겠습니까? (기존 프리셋 병합)')) {
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      showToast('Drive 백업 파일에서 복원 중...', 'info');
-      google.script.run
-        .withSuccessHandler((res) => {
-          if (res && res.success && res.data) {
-            presetsState = Object.assign({}, presetsState, res.data);
-            savePresetsToLocalStorage();
-            
-            const keys = Object.keys(res.data);
-            if (keys.length > 0) {
-              loadPreset(keys[0]);
-            } else {
-              renderPresetList();
-            }
-            closeDriveBackupModal();
-            showToast(res.message, 'success');
-          } else {
-            showToast(res ? res.error : '복원 실패', 'error');
-          }
-        })
-        .importFromDriveFile(fileId);
-    }
-  }
-}
-
 // ----------------------------------------------------
 // Import / Export JSON Local Files
 // ----------------------------------------------------
@@ -830,103 +577,25 @@ function exportPresetsJson() {
   showToast('프리셋 JSON 파일 내보내기가 완료되었습니다.', 'success');
 }
 
-function openImportJsonModal() {
-  addDebugLog('openImportJsonModal 실행됨', 'info');
-  const modal = document.getElementById('importJsonModal');
-  const fileNameEl = document.getElementById('importFileName');
-  const textAreaEl = document.getElementById('importJsonText');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('pointer-events', 'auto', 'important');
-    addDebugLog('importJsonModal 표시 (display: flex)', 'success');
-  }
-  if (fileNameEl) fileNameEl.textContent = '선택된 파일 없음';
-  if (textAreaEl) textAreaEl.value = '';
-}
-
-function closeImportJsonModal() {
-  addDebugLog('closeImportJsonModal 실행됨', 'info');
-  const modal = document.getElementById('importJsonModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    modal.style.setProperty('display', 'none', 'important');
-    modal.style.setProperty('pointer-events', 'none', 'important');
-  }
-}
-
-function processImportedObject(imported, sourceName = 'JSON') {
-  if (typeof imported === 'object' && imported !== null && !Array.isArray(imported)) {
-    // Merge imported presets with presetsState
-    presetsState = Object.assign({}, presetsState, imported);
-    savePresetsToLocalStorage();
-
-    // Sync imported presets to Cloud (Chunking enabled)
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler((res) => {
-          showToast(`'${sourceName}' 프리셋 복원 및 클라우드 연동 완료!`, 'success');
-        })
-        .withFailureHandler((err) => {
-          showToast(`로컬 복원 완료 (클라우드: ${err ? err.message : ''})`, 'info');
-        })
-        .saveAllPresetsToCloud(presetsState);
-    } else {
-      showToast(`'${sourceName}' 프리셋이 성공적으로 복원되었습니다.`, 'success');
-    }
-
-    const keys = Object.keys(imported);
-    if (keys.length > 0) {
-      loadPreset(keys[0]);
-    } else {
-      renderPresetList();
-    }
-    closeImportJsonModal();
-    return true;
-  } else {
-    showToast('유효하지 않은 프리셋 JSON 포맷입니다.', 'error');
-    return false;
-  }
-}
-
 function importPresetsJson(event) {
-  const files = event.target ? event.target.files : null;
-  if (!files || files.length === 0) return;
-
-  const file = files[0];
-  const fileNameEl = document.getElementById('importFileName');
-  if (fileNameEl) fileNameEl.textContent = file.name;
+  const file = event.target.files[0];
+  if (!file) return;
 
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const content = e.target.result;
-      const imported = JSON.parse(content);
-      processImportedObject(imported, file.name);
+      const imported = JSON.parse(e.target.result);
+      if (typeof imported === 'object') {
+        presetsState = Object.assign({}, presetsState, imported);
+        savePresetsToLocalStorage();
+        renderPresetList();
+        showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
+      }
     } catch (err) {
-      showToast('JSON 파일 파싱 실패: ' + err.message, 'error');
+      showToast('올바르지 않은 JSON 파일 포맷입니다.', 'error');
     }
-    if (event.target) event.target.value = '';
   };
   reader.readAsText(file);
-}
-
-function importPresetsFromText() {
-  const textEl = document.getElementById('importJsonText');
-  const text = textEl ? textEl.value.trim() : '';
-  if (!text) {
-    showToast('복원할 JSON 텍스트를 입력해주세요.', 'error');
-    return;
-  }
-
-  try {
-    const imported = JSON.parse(text);
-    processImportedObject(imported, '직접 입력한 텍스트');
-  } catch (err) {
-    showToast('JSON 텍스트 파싱 오류: ' + err.message, 'error');
-  }
 }
 
 // ----------------------------------------------------
@@ -963,7 +632,6 @@ function escapeJsString(str) {
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
-  if (!container) return;
   const toast = document.createElement('div');
   
   let bgColor = 'bg-slate-900 border-slate-700 text-slate-200';
@@ -987,55 +655,5 @@ function showToast(message, type = 'info') {
     toast.style.transition = 'all 0.3s ease-out';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
-}
-
-// Global scope window binding for iframe compatibility
-function bindWindowGlobals() {
-  window.previewWsbXml = previewWsbXml;
-  window.closeXmlModal = closeXmlModal;
-  window.exportWsbFile = exportWsbFile;
-  window.createNewPreset = createNewPreset;
-  window.saveCurrentPreset = saveCurrentPreset;
-  window.deleteCurrentPreset = deleteCurrentPreset;
-  window.backupDrive = backupDrive;
-  window.openDriveBackupModal = openDriveBackupModal;
-  window.closeDriveBackupModal = closeDriveBackupModal;
-  window.openImportJsonModal = openImportJsonModal;
-  window.closeImportJsonModal = closeImportJsonModal;
-  window.syncCloudPresets = syncCloudPresets;
-  window.applySnippetTemplate = applySnippetTemplate;
-  window.addFolderRow = addFolderRow;
-  window.removeFolderRow = removeFolderRow;
-  window.copyXmlToClipboard = copyXmlToClipboard;
-  window.importPresetsFromText = importPresetsFromText;
-  window.importPresetsJson = importPresetsJson;
-  window.loadPreset = loadPreset;
-  window.exportPresetsJson = exportPresetsJson;
-  window.addDefaultDownloadsFolder = addDefaultDownloadsFolder;
-}
-
-// Programmatic event listener bindings as double-guarantee
-function bindAllEvents() {
-  const bind = (id, event, fn) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener(event, fn);
-    }
-  };
-
-  bind('btnPreviewXml', 'click', previewWsbXml);
-  bind('btnExportWsb', 'click', exportWsbFile);
-  bind('btnSyncCloud', 'click', syncCloudPresets);
-  bind('btnBackupDrive', 'click', backupDrive);
-  bind('btnRestoreDrive', 'click', openDriveBackupModal);
-  bind('btnNewPreset', 'click', createNewPreset);
-  bind('btnSavePreset', 'click', saveCurrentPreset);
-  bind('btnDeletePreset', 'click', deleteCurrentPreset);
-  bind('snippetSelect', 'change', (e) => applySnippetTemplate(e.target ? e.target.value : ''));
-  bind('btnAddFolder', 'click', addFolderRow);
-  bind('btnCopyXml', 'click', copyXmlToClipboard);
-  bind('btnImportJsonText', 'click', importPresetsFromText);
-  bind('btnExportJson', 'click', exportPresetsJson);
-  bind('btnImportJson', 'click', openImportJsonModal);
 }
 </script>
