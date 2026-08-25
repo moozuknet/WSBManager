@@ -45,7 +45,7 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
         ],
-        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`
+        logonCommand: `cmd.exe /c "curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart"`
       }
     };
     presetsState = defaultPresets;
@@ -172,17 +172,23 @@ function applySnippetTemplate() {
   let snippet = '';
 
   switch (val) {
-    case 'winget-chrome':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
+    case 'direct-chrome':
+      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi && msiexec.exe /i %TEMP%\\chrome.msi /qn"`;
       break;
-    case 'winget-vscode':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
+    case 'direct-vscode':
+      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart"`;
       break;
-    case 'winget-git':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements"`;
+    case 'direct-7zip':
+      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\7z.exe https://www.7-zip.org/a/7z2408-x64.exe && %TEMP%\\7z.exe /S"`;
       break;
-    case 'winget-dev-pack':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id 7zip.7zip --accept-package-agreements; winget install -e --id Notepad++.Notepad++ --accept-package-agreements; winget install -e --id Google.Chrome --accept-package-agreements"`;
+    case 'direct-git':
+      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\git.exe https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe && %TEMP%\\git.exe /VERYSILENT /NORESTART"`;
+      break;
+    case 'direct-dev-pack':
+      snippet = `cmd.exe /c "curl.exe -sSL -o %TEMP%\\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi && msiexec.exe /i %TEMP%\\chrome.msi /qn && curl.exe -sSL -o %TEMP%\\vscode.exe https://update.code.visualstudio.com/latest/win32-x64/stable && %TEMP%\\vscode.exe /verysilent /suppressmsgboxes /norestart && curl.exe -sSL -o %TEMP%\\7z.exe https://www.7-zip.org/a/7z2408-x64.exe && %TEMP%\\7z.exe /S"`;
+      break;
+    case 'winget-bootstrap':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/microsoft/winget-cli/master/build/assets/bootstrap.ps1 | iex; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'open-browser':
       snippet = `cmd.exe /c start https://google.com`;

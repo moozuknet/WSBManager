@@ -260,19 +260,25 @@
 
               <!-- Snippet Template Selector -->
               <div class="flex items-center gap-2">
-                <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none">
+                <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none max-w-[280px] truncate">
                   <option value="" selected>⚡ 빠른 스크립트 템플릿 선택...</option>
-                  <option value="winget-chrome">Winget: Google Chrome 자동 설치</option>
-                  <option value="winget-vscode">Winget: VS Code 자동 설치</option>
-                  <option value="winget-git">Winget: Git 설치</option>
-                  <option value="winget-dev-pack">Winget: 필수 툴 팩 (7-Zip + Notepad++ + Chrome)</option>
-                  <option value="open-browser">cmd: 샌드박스 시작 시 특정 웹사이트 열기</option>
-                  <option value="ps1-desktop">powershell: Desktop의 init.ps1 실행</option>
+                  <optgroup label="Direct Installer (Sandbox 100% 호환)">
+                    <option value="direct-chrome">⚡ Google Chrome 무소음 자동 설치</option>
+                    <option value="direct-vscode">⚡ VS Code 무소음 자동 설치</option>
+                    <option value="direct-7zip">⚡ 7-Zip 무소음 자동 설치</option>
+                    <option value="direct-git">⚡ Git for Windows 무소음 설치</option>
+                    <option value="direct-dev-pack">🚀 개발자 툴 팩 (Chrome + VS Code + 7-Zip)</option>
+                  </optgroup>
+                  <optgroup label="Winget & 유틸리티 스크립트">
+                    <option value="winget-bootstrap">📦 Winget 부트스트랩 후 Chrome 설치</option>
+                    <option value="open-browser">🌐 샌드박스 시작 시 웹사이트 열기 (cmd)</option>
+                    <option value="ps1-desktop">📜 Desktop의 init.ps1 스크립트 실행</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
 
-            <textarea id="logonCommand" rows="3" placeholder="샌드박스 부팅 시 자동 실행할 명령어를 입력하세요.&#10;예: powershell.exe -ExecutionPolicy Bypass -Command &quot;winget install -e --id Google.Chrome&quot;" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
+            <textarea id="logonCommand" rows="3" placeholder="샌드박스 부팅 시 자동 실행할 명령어를 입력하세요.&#10;예: cmd.exe /c &quot;curl.exe -sSL -o %TEMP%\chrome.msi https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi &amp;&amp; msiexec.exe /i %TEMP%\chrome.msi /qn&quot;" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
           </div>
 
         </form>
