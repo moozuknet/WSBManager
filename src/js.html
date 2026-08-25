@@ -1,4 +1,105 @@
 <script>
+// ====================================================
+// Live On-Screen Debug Console System
+// ====================================================
+const debugLogs = [];
+
+function addDebugLog(msg, type = 'info') {
+  const time = new Date().toTimeString().split(' ')[0];
+  const entry = `[${time}] ${msg}`;
+  debugLogs.push(entry);
+
+  const logBody = document.getElementById('debugLogBody');
+  if (logBody) {
+    const div = document.createElement('div');
+    let style = 'text-slate-300';
+    let prefix = 'ℹ️';
+    if (type === 'error') {
+      style = 'text-rose-400 font-semibold bg-rose-950/40 p-1.5 rounded border border-rose-800/40';
+      prefix = '❌';
+    } else if (type === 'warn') {
+      style = 'text-amber-300';
+      prefix = '⚠️';
+    } else if (type === 'click') {
+      style = 'text-sky-300 font-medium bg-sky-950/40 p-1.5 rounded border border-sky-800/40';
+      prefix = '🖱️';
+    } else if (type === 'success') {
+      style = 'text-emerald-300';
+      prefix = '✅';
+    }
+
+    div.className = style;
+    div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${prefix} ${escapeHtml(msg)}`;
+    logBody.appendChild(div);
+    logBody.scrollTop = logBody.scrollHeight;
+  }
+}
+
+// Global Exception & Event Interceptors
+window.onerror = function(message, source, lineno, colno, error) {
+  addDebugLog(`Script Error: ${message} (Line ${lineno}:${colno})`, 'error');
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function(event) {
+  addDebugLog(`Unhandled Promise Rejection: ${event.reason}`, 'error');
+});
+
+// Capture Phase Global Click Tracker (Guarantees capturing all clicks)
+document.addEventListener('click', function(e) {
+  try {
+    const target = e.target;
+    const btn = target.closest('button, a, select, input, [onclick]');
+    if (btn) {
+      const idStr = btn.id ? `#${btn.id}` : '';
+      const textStr = (btn.innerText || btn.value || btn.title || 'element').trim().slice(0, 30);
+      const onclickAttr = btn.getAttribute('onclick') ? ` [onclick="${btn.getAttribute('onclick')}"]` : '';
+      addDebugLog(`클릭 감지: <${btn.tagName.toLowerCase()}${idStr}> "${textStr}"${onclickAttr}`, 'click');
+    } else {
+      addDebugLog(`배경 클릭: <${target.tagName.toLowerCase()}>`, 'info');
+    }
+  } catch (err) {
+    addDebugLog(`Click tracker error: ${err.message}`, 'warn');
+  }
+}, true);
+
+function toggleDebugConsole() {
+  const body = document.getElementById('debugLogBody');
+  const icon = document.getElementById('debugToggleIcon');
+  if (body) {
+    if (body.style.display === 'none') {
+      body.style.display = 'block';
+      if (icon) icon.className = 'fa-solid fa-chevron-down';
+    } else {
+      body.style.display = 'none';
+      if (icon) icon.className = 'fa-solid fa-chevron-up';
+    }
+  }
+}
+
+function clearDebugLog() {
+  debugLogs.length = 0;
+  const logBody = document.getElementById('debugLogBody');
+  if (logBody) logBody.innerHTML = '<div class="text-slate-500 italic">[로그가 초기화되었습니다.]</div>';
+}
+
+function copyDebugLog() {
+  const text = debugLogs.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      addDebugLog('로그가 클립보드에 복사되었습니다.', 'success');
+    }).catch(err => {
+      addDebugLog('복사 실패: ' + err, 'error');
+    });
+  } else {
+    prompt('Ctrl+C를 눌러 디버그 로그를 복사하세요:', text);
+  }
+}
+
+window.toggleDebugConsole = toggleDebugConsole;
+window.clearDebugLog = clearDebugLog;
+window.copyDebugLog = copyDebugLog;
+
 // State Management
 let presetsState = {};
 let activePresetName = '';
@@ -27,13 +128,17 @@ function safeSetLocalStorage(key, value) {
 // Initial load on DOM ready (Immediate execution fallback for GAS iframe)
 function bootApp() {
   try {
+    addDebugLog('앱 부팅 시작 (bootApp)...', 'info');
     bindWindowGlobals();
+    addDebugLog('전역 Window 함수 바인딩 완료', 'success');
     bindAllEvents();
+    addDebugLog('이중 이벤트 리스너(addEventListener) 바인딩 완료', 'success');
     initDefaults();
     loadPresetsFromLocalStorage();
+    addDebugLog('프리셋 로드 완료', 'success');
     syncCloudPresetsSilently();
   } catch (err) {
-    console.error('Boot error caught:', err);
+    addDebugLog(`부팅 중 오류 발생: ${err.message}`, 'error');
   }
 }
 
@@ -295,36 +400,57 @@ function generateWsbXml(formData) {
 }
 
 function exportWsbFile() {
-  const formData = collectFormData();
-  const xmlContent = generateWsbXml(formData);
-  const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8;' });
-  
-  const sanitizedFilename = (formData.presetName || 'sandbox_config').replace(/[/\\?%*:|"<>]/g, '_');
-  const filename = `${sanitizedFilename}.wsb`;
+  addDebugLog('exportWsbFile 실행됨', 'info');
+  try {
+    const formData = collectFormData();
+    const xmlContent = generateWsbXml(formData);
+    const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8;' });
+    
+    const sanitizedFilename = (formData.presetName || 'sandbox_config').replace(/[/\\?%*:|"<>]/g, '_');
+    const filename = `${sanitizedFilename}.wsb`;
 
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-  showToast(`'${filename}' 파일 다운로드가 시작되었습니다.`, 'success');
+    showToast(`'${filename}' 파일 다운로드가 시작되었습니다.`, 'success');
+    addDebugLog(`.wsb 파일 다운로드 완료: ${filename}`, 'success');
+  } catch (err) {
+    addDebugLog(`.wsb 다운로드 중 오류: ${err.message}`, 'error');
+  }
 }
 
 function previewWsbXml() {
-  const formData = collectFormData();
-  const xmlContent = generateWsbXml(formData);
-  document.getElementById('xmlModalContent').textContent = xmlContent;
-  const modal = document.getElementById('xmlModal');
-  modal.style.display = 'flex';
-  modal.classList.remove('hidden');
+  addDebugLog('previewWsbXml 실행됨', 'info');
+  try {
+    const formData = collectFormData();
+    const xmlContent = generateWsbXml(formData);
+    const modalContent = document.getElementById('xmlModalContent');
+    if (modalContent) modalContent.textContent = xmlContent;
+    
+    const modal = document.getElementById('xmlModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+      addDebugLog('XML 미리보기 모달 표시 성공 (display: flex)', 'success');
+    } else {
+      addDebugLog('#xmlModal 모달 요소를 찾을 수 없습니다.', 'error');
+    }
+  } catch (err) {
+    addDebugLog(`previewWsbXml 처리 중 오류: ${err.message}`, 'error');
+  }
 }
 
 function closeXmlModal() {
+  addDebugLog('closeXmlModal 실행됨', 'info');
   const modal = document.getElementById('xmlModal');
-  modal.style.display = 'none';
-  modal.classList.add('hidden');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+  }
 }
 
 function copyXmlToClipboard() {

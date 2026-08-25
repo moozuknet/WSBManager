@@ -387,6 +387,29 @@
         <button onclick="closeImportJsonModal()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-1.5 rounded-lg text-xs font-medium transition">닫기</button>
       </div>
     </div>
+  <!-- Floating Live Debug Console Panel -->
+  <div id="debugConsoleContainer" class="fixed bottom-3 right-3 z-50 max-w-lg w-full px-3 pointer-events-auto">
+    <div class="glass-card bg-slate-950/95 border border-sky-500/40 rounded-2xl shadow-2xl overflow-hidden font-code text-xs">
+      <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800">
+        <span class="font-bold text-sky-400 flex items-center gap-2">
+          <i class="fa-solid fa-bug text-amber-400"></i> 실시간 디버거 (Live Debugger)
+        </span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="copyDebugLog()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition" title="디버그 로그 복사">
+            <i class="fa-solid fa-copy mr-1"></i>복사
+          </button>
+          <button type="button" onclick="clearDebugLog()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition" title="로그 지우기">
+            <i class="fa-solid fa-trash-can mr-1"></i>지우기
+          </button>
+          <button type="button" onclick="toggleDebugConsole()" class="text-slate-300 hover:text-white text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition">
+            <i id="debugToggleIcon" class="fa-solid fa-chevron-down"></i>
+          </button>
+        </div>
+      </div>
+      <div id="debugLogBody" class="p-3 max-h-48 overflow-y-auto space-y-1.5 text-[11px] text-slate-300 leading-relaxed bg-slate-950">
+        <div class="text-slate-500 italic">[디버거가 준비되었습니다. 화면의 버튼을 클릭하면 로그가 표시됩니다.]</div>
+      </div>
+    </div>
   </div>
 
   <?!= include('js'); ?>
