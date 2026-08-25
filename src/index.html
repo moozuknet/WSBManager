@@ -38,25 +38,25 @@
 
       <!-- Main Action Buttons -->
       <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-        <button onclick="previewWsbXml()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition active:scale-95 shadow">
+        <button id="btnPreviewXml" onclick="previewWsbXml()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition active:scale-95 shadow">
           <i class="fa-solid fa-code text-sky-400"></i> XML 미리보기
         </button>
 
-        <button onclick="exportWsbFile()" type="button" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition active:scale-95">
+        <button id="btnExportWsb" onclick="exportWsbFile()" type="button" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition active:scale-95">
           <i class="fa-solid fa-download"></i> .wsb 다운로드
         </button>
 
         <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
 
-        <button onclick="syncCloudPresets()" type="button" title="구글 클라우드와 프리셋 동기화" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 p-2 rounded-xl text-xs sm:text-sm transition">
+        <button id="btnSyncCloud" onclick="syncCloudPresets()" type="button" title="구글 클라우드와 프리셋 동기화" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 p-2 rounded-xl text-xs sm:text-sm transition">
           <i class="fa-solid fa-rotate text-sky-400"></i>
         </button>
 
-        <button onclick="backupDrive()" type="button" title="Google Drive 백업 파일 생성" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+        <button id="btnBackupDrive" onclick="backupDrive()" type="button" title="Google Drive 백업 파일 생성" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
           <i class="fa-brands fa-google-drive"></i> Drive 백업
         </button>
 
-        <button onclick="openDriveBackupModal()" type="button" title="Google Drive 백업 파일 목록에서 복원" class="bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+        <button id="btnRestoreDrive" onclick="openDriveBackupModal()" type="button" title="Google Drive 백업 파일 목록에서 복원" class="bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
           <i class="fa-solid fa-cloud-arrow-up"></i> Drive 복원
         </button>
       </div>
@@ -72,7 +72,7 @@
             <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm sm:text-base">
               <i class="fa-solid fa-bookmark text-sky-400"></i> 저장된 프리셋 목록
             </h2>
-            <button onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
+            <button id="btnNewPreset" onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
               <i class="fa-solid fa-plus"></i> 신규 작성
             </button>
           </div>
@@ -94,11 +94,11 @@
               <span id="syncBadge" class="w-2 h-2 rounded-full bg-emerald-500"></span> Local / Cloud Sync
             </span>
             <div class="flex items-center gap-2">
-              <button onclick="exportPresetsJson()" type="button" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
+              <button id="btnExportJson" onclick="exportPresetsJson()" type="button" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
                 <i class="fa-solid fa-file-export"></i> 내보내기
               </button>
               <span>|</span>
-              <button onclick="openImportJsonModal()" type="button" class="hover:text-slate-200 transition cursor-pointer flex items-center gap-1" title="프리셋 JSON 불러오기">
+              <button id="btnImportJson" onclick="openImportJsonModal()" type="button" class="hover:text-slate-200 transition cursor-pointer flex items-center gap-1" title="프리셋 JSON 불러오기">
                 <i class="fa-solid fa-file-import"></i> 가져오기
               </button>
             </div>
@@ -118,10 +118,10 @@
                 <input type="text" id="presetName" placeholder="예: 개발용 샌드박스, 클린 브라우징 등" class="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-medium focus:outline-none transition">
               </div>
               <div class="flex items-center gap-2 self-end sm:self-center">
-                <button onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
+                <button id="btnSavePreset" onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
                   <i class="fa-solid fa-floppy-disk"></i> 프리셋 저장
                 </button>
-                <button onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
+                <button id="btnDeletePreset" onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -242,7 +242,7 @@
                 <button type="button" onclick="addDefaultDownloadsFolder()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg transition">
                   <i class="fa-solid fa-folder-plus text-amber-400 mr-1"></i> Public Downloads 추가
                 </button>
-                <button type="button" onclick="addFolderRow()" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition font-medium">
+                <button id="btnAddFolder" type="button" onclick="addFolderRow()" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition font-medium">
                   + 폴더 추가
                 </button>
               </div>

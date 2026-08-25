@@ -27,6 +27,8 @@ function safeSetLocalStorage(key, value) {
 // Initial load on DOM ready (Immediate execution fallback for GAS iframe)
 function bootApp() {
   try {
+    bindWindowGlobals();
+    bindAllEvents();
     initDefaults();
     loadPresetsFromLocalStorage();
     syncCloudPresetsSilently();
@@ -821,6 +823,7 @@ function escapeJsString(str) {
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const toast = document.createElement('div');
   
   let bgColor = 'bg-slate-900 border-slate-700 text-slate-200';
@@ -844,5 +847,55 @@ function showToast(message, type = 'info') {
     toast.style.transition = 'all 0.3s ease-out';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
+}
+
+// Global scope window binding for iframe compatibility
+function bindWindowGlobals() {
+  window.previewWsbXml = previewWsbXml;
+  window.closeXmlModal = closeXmlModal;
+  window.exportWsbFile = exportWsbFile;
+  window.createNewPreset = createNewPreset;
+  window.saveCurrentPreset = saveCurrentPreset;
+  window.deleteCurrentPreset = deleteCurrentPreset;
+  window.backupDrive = backupDrive;
+  window.openDriveBackupModal = openDriveBackupModal;
+  window.closeDriveBackupModal = closeDriveBackupModal;
+  window.openImportJsonModal = openImportJsonModal;
+  window.closeImportJsonModal = closeImportJsonModal;
+  window.syncCloudPresets = syncCloudPresets;
+  window.applySnippetTemplate = applySnippetTemplate;
+  window.addFolderRow = addFolderRow;
+  window.removeFolderRow = removeFolderRow;
+  window.copyXmlToClipboard = copyXmlToClipboard;
+  window.importPresetsFromText = importPresetsFromText;
+  window.importPresetsJson = importPresetsJson;
+  window.loadPreset = loadPreset;
+  window.exportPresetsJson = exportPresetsJson;
+  window.addDefaultDownloadsFolder = addDefaultDownloadsFolder;
+}
+
+// Programmatic event listener bindings as double-guarantee
+function bindAllEvents() {
+  const bind = (id, event, fn) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener(event, fn);
+    }
+  };
+
+  bind('btnPreviewXml', 'click', previewWsbXml);
+  bind('btnExportWsb', 'click', exportWsbFile);
+  bind('btnSyncCloud', 'click', syncCloudPresets);
+  bind('btnBackupDrive', 'click', backupDrive);
+  bind('btnRestoreDrive', 'click', openDriveBackupModal);
+  bind('btnNewPreset', 'click', createNewPreset);
+  bind('btnSavePreset', 'click', saveCurrentPreset);
+  bind('btnDeletePreset', 'click', deleteCurrentPreset);
+  bind('snippetSelect', 'change', (e) => applySnippetTemplate(e.target ? e.target.value : ''));
+  bind('btnAddFolder', 'click', addFolderRow);
+  bind('btnCopyXml', 'click', copyXmlToClipboard);
+  bind('btnImportJsonText', 'click', importPresetsFromText);
+  bind('btnExportJson', 'click', exportPresetsJson);
+  bind('btnImportJson', 'click', openImportJsonModal);
 }
 </script>
