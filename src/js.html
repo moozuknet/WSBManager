@@ -235,7 +235,10 @@ function applySnippetTemplate() {
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Chrome 및 VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\c.exe' 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'; Start-Process '$env:TEMP\\c.exe' -ArgumentList '/silent', '/install' -Wait; curl.exe -s -L -o '$env:TEMP\\v.exe' 'https://update.code.visualstudio.com/latest/win32-x64-user/stable'; Start-Process '$env:TEMP\\v.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host '개발 툴 팩 설치 완벽 완료!'"`;
       break;
 
-    // ⚙️ Utilities
+    // ⚙️ Utilities & Solutions
+    case 'tablecloth':
+      snippet = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoExit','-NoProfile','-ExecutionPolicy','Bypass','-Command','$Host.UI.RawUI.WindowTitle = \\"TableCloth Setup\\"; Write-Host \\" Getting TableCloth ready...\\" -ForegroundColor Cyan; if (-not (Resolve-DnsName -Name github.com -QuickTimeout -ErrorAction SilentlyContinue)) { Get-NetAdapter | Where-Object Status -eq \\"Up\\" | Set-DnsClientServerAddress -ServerAddresses 8.8.8.8,1.1.1.1 }; [Net.ServicePointManager]::SecurityProtocol = 3072; try { $w = New-Object Net.WebClient; $w.Headers.Add(\\"User-Agent\\", \\"Mozilla/5.0\\"); iex ($w.DownloadString(\\"https://github.com/yourtablecloth/TableCloth/releases/latest/download/tablecloth-prepare.ps1\\")) } catch { Write-Host (\\" Failed: \\" + $_.Exception.Message) -ForegroundColor Red }'"`;
+      break;
     case 'open-browser':
       snippet = `cmd.exe /c start https://google.com`;
       break;
