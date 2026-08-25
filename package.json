@@ -8,7 +8,7 @@
     "push": "clasp push -f",
     "deployments": "clasp deployments",
     "clean-deployments": "clasp undeploy --all",
-    "deploy": "clasp undeploy --all && clasp push -f && clasp deploy --description \"Automated Web App Release\"",
+    "deploy": "clasp push -f && clasp deploy -i AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC -d \"Automated Release\"",
     "redeploy": "npm run deploy"
   },
   "keywords": [
