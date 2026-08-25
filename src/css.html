@@ -1,0 +1,70 @@
+<style>
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(51, 65, 85, 0.8);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(71, 85, 105, 1);
+  }
+
+  /* Glassmorphism & Custom Elements */
+  .glass-card {
+    background: rgba(30, 41, 59, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+
+  .glass-card-hover {
+    transition: all 0.2s ease-in-out;
+  }
+  .glass-card-hover:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 8px 25px -5px rgba(14, 165, 233, 0.15);
+  }
+
+  .preset-item {
+    transition: all 0.15s ease-in-out;
+  }
+  .preset-item.active {
+    background: rgba(14, 165, 233, 0.15);
+    border-color: rgba(56, 189, 248, 0.6);
+  }
+
+  /* Pulse animation for toast */
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in-down {
+    animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Custom Checkbox Toggle */
+  .toggle-checkbox:checked {
+    right: 0;
+    border-color: #38bdf8;
+  }
+  .toggle-checkbox:checked + .toggle-label {
+    background-color: #0284c7;
+  }
+
+  /* Code font fallback */
+  .font-code {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
+  }
+</style>

@@ -1,0 +1,26 @@
+{
+  "name": "wsbmanager-gas",
+  "version": "1.0.0",
+  "description": "Windows Sandbox (.wsb) Configurator - Google Apps Script Web App",
+  "main": "src/Code.js",
+  "scripts": {
+    "login": "clasp login",
+    "push": "clasp push -f",
+    "deployments": "clasp deployments",
+    "clean-deployments": "clasp undeploy --all",
+    "deploy": "clasp undeploy --all && clasp push -f && clasp deploy --description \"Automated Web App Release\"",
+    "redeploy": "npm run deploy"
+  },
+  "keywords": [
+    "windows-sandbox",
+    "wsb",
+    "google-apps-script",
+    "gas",
+    "clasp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

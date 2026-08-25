@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSB Manager Web - Windows Sandbox Configurator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <?!= include('css'); ?>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+    <!-- Top Header Navigation -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 rounded-2xl border border-slate-800 shadow-xl">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i class="fa-solid fa-box-open text-2xl text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300 flex items-center gap-2">
+            WSB Manager Web
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-medium">GAS Edition</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-400">Windows Sandbox (.wsb) 설정 관리 및 원클릭 XML 빌더</p>
+        </div>
+      </div>
+
+      <!-- Main Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <button onclick="previewWsbXml()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition active:scale-95 shadow">
+          <i class="fa-solid fa-code text-sky-400"></i> XML 미리보기
+        </button>
+
+        <button onclick="exportWsbFile()" type="button" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition active:scale-95">
+          <i class="fa-solid fa-download"></i> .wsb 다운로드
+        </button>
+
+        <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
+        <button onclick="syncCloudPresets()" type="button" title="구글 클라우드와 프리셋 동기화" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 p-2 rounded-xl text-xs sm:text-sm transition">
+          <i class="fa-solid fa-rotate text-sky-400"></i>
+        </button>
+
+        <button onclick="backupDrive()" type="button" title="Google Drive 백업 파일 생성" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+          <i class="fa-brands fa-google-drive"></i> Drive 백업
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left Sidebar: Preset Management (4 Cols) -->
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm sm:text-base">
+              <i class="fa-solid fa-bookmark text-sky-400"></i> 저장된 프리셋 목록
+            </h2>
+            <button onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
+              <i class="fa-solid fa-plus"></i> 신규 작성
+            </button>
+          </div>
+
+          <!-- Preset Search Filter -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+            <input type="text" id="presetSearch" oninput="filterPresets()" placeholder="프리셋 검색..." class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition">
+          </div>
+
+          <!-- Preset Scrollable List -->
+          <ul id="presetList" class="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+            <!-- Dynamic Preset Items render here -->
+          </ul>
+
+          <!-- Backup & Restore Local JSON -->
+          <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span class="flex items-center gap-1.5 text-[11px]">
+              <span id="syncBadge" class="w-2 h-2 rounded-full bg-emerald-500"></span> Local / Cloud Sync
+            </span>
+            <div class="flex items-center gap-2">
+              <button onclick="exportPresetsJson()" class="hover:text-slate-200 transition" title="프리셋 JSON 내보내기">
+                <i class="fa-solid fa-file-export"></i> 내보내기
+              </button>
+              <span>|</span>
+              <label class="hover:text-slate-200 transition cursor-pointer" title="프리셋 JSON 불러오기">
+                <i class="fa-solid fa-file-import"></i> 가져오기
+                <input type="file" id="importJsonFile" accept=".json" onchange="importPresetsJson(event)" class="hidden">
+              </label>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Panel: Sandbox Configuration Form (8 Cols) -->
+      <main class="lg:col-span-8">
+        <form id="wsbForm" onsubmit="event.preventDefault();" class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
+          
+          <!-- Preset Info Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div class="flex-1 space-y-1">
+              <label class="block text-xs font-semibold text-sky-400 uppercase tracking-wider">프리셋 이름 (Preset Name)</label>
+              <input type="text" id="presetName" placeholder="예: 개발용 샌드박스, 클린 브라우징 등" class="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-medium focus:outline-none transition">
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button onclick="saveCurrentPreset()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow transition">
+                <i class="fa-solid fa-floppy-disk"></i> 프리셋 저장
+              </button>
+              <button onclick="deleteCurrentPreset()" type="button" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition" title="현재 프리셋 삭제">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 1: Hardware & Network Config -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-sky-300 flex items-center gap-2">
+              <i class="fa-solid fa-microchip text-sky-400"></i> 1. 기본 하드웨어 & 네트워크 (Hardware & Networking)
+            </h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- vGPU -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                <label class="block text-xs text-slate-400 font-medium">가상 GPU (vGPU)</label>
+                <select id="vGpu" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Enable">Enable (활성화)</option>
+                  <option value="Disable">Disable (비활성화)</option>
+                  <option value="Default" selected>Default (기본값)</option>
+                </select>
+              </div>
+
+              <!-- Networking -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                <label class="block text-xs text-slate-400 font-medium">네트워크 연결 (Networking)</label>
+                <select id="networking" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default (허용)</option>
+                  <option value="Disable">Disable (차단/오프라인)</option>
+                </select>
+              </div>
+
+              <!-- Memory In MB -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                <label class="block text-xs text-slate-400 font-medium">메모리 할당 (MB)</label>
+                <input type="number" id="memoryInMB" min="0" step="1024" placeholder="예: 4096 (0 = 기본값)" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                <div class="flex gap-1 pt-1">
+                  <button type="button" onclick="setQuickMemory(2048)" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">2GB</button>
+                  <button type="button" onclick="setQuickMemory(4096)" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">4GB</button>
+                  <button type="button" onclick="setQuickMemory(8192)" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">8GB</button>
+                  <button type="button" onclick="setQuickMemory(16384)" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">16GB</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Hardware Redirection & Security -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-sky-300 flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-sky-400"></i> 2. 장치 리디렉션 & 보안 (Device & Security Options)
+            </h3>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <!-- Clipboard Redirection -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                <label class="block text-xs text-slate-400 font-medium">클립보드 공유</label>
+                <select id="clipboard" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default (양방향)</option>
+                  <option value="Disable">Disable (차단)</option>
+                  <option value="HostToGuest">HostToGuest (호스트->샌드박스)</option>
+                  <option value="GuestToHost">GuestToHost (샌드박스->호스트)</option>
+                </select>
+              </div>
+
+              <!-- Audio Input -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                <label class="block text-xs text-slate-400 font-medium">오디오 입력 (마이크)</label>
+                <select id="audioInput" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default</option>
+                  <option value="Enable">Enable (허용)</option>
+                  <option value="Disable">Disable (차단)</option>
+                </select>
+              </div>
+
+              <!-- Video Input -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                <label class="block text-xs text-slate-400 font-medium">비디오 입력 (웹캠)</label>
+                <select id="videoInput" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default</option>
+                  <option value="Enable">Enable (허용)</option>
+                  <option value="Disable">Disable (차단)</option>
+                </select>
+              </div>
+
+              <!-- Protected Client -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                <label class="block text-xs text-slate-400 font-medium">보호된 클라이언트 (RDP)</label>
+                <select id="protectedClient" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default</option>
+                  <option value="Enable">Enable (보호 강화)</option>
+                  <option value="Disable">Disable</option>
+                </select>
+              </div>
+
+              <!-- Printer Redirection -->
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                <label class="block text-xs text-slate-400 font-medium">프린터 리디렉션</label>
+                <select id="printerRedirection" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 focus:border-sky-500 focus:outline-none">
+                  <option value="Default" selected>Default</option>
+                  <option value="Enable">Enable (허용)</option>
+                  <option value="Disable">Disable (차단)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Mapped Folders -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-sky-300 flex items-center gap-2">
+                <i class="fa-solid fa-folder-tree text-sky-400"></i> 3. 폴더 매핑 (Mapped Folders)
+              </h3>
+              <div class="flex gap-2">
+                <button type="button" onclick="addDefaultDownloadsFolder()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg transition">
+                  <i class="fa-solid fa-folder-plus text-amber-400 mr-1"></i> Public Downloads 추가
+                </button>
+                <button type="button" onclick="addFolderRow()" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition font-medium">
+                  + 폴더 추가
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Folder Container -->
+            <div id="folderContainer" class="space-y-3">
+              <!-- Folder Rows generated dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Section 4: Logon Command & Snippet Templates -->
+          <div class="space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-sky-300 flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-sky-400"></i> 4. 시작 스크립트 (Logon Command)
+              </h3>
+
+              <!-- Snippet Template Selector -->
+              <div class="flex items-center gap-2">
+                <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none">
+                  <option value="" selected>⚡ 빠른 스크립트 템플릿 선택...</option>
+                  <option value="winget-chrome">Winget: Google Chrome 자동 설치</option>
+                  <option value="winget-vscode">Winget: VS Code 자동 설치</option>
+                  <option value="winget-git">Winget: Git 설치</option>
+                  <option value="winget-dev-pack">Winget: 필수 툴 팩 (7-Zip + Notepad++ + Chrome)</option>
+                  <option value="open-browser">cmd: 샌드박스 시작 시 특정 웹사이트 열기</option>
+                  <option value="ps1-desktop">powershell: Desktop의 init.ps1 실행</option>
+                </select>
+              </div>
+            </div>
+
+            <textarea id="logonCommand" rows="3" placeholder="샌드박스 부팅 시 자동 실행할 명령어를 입력하세요.&#10;예: powershell.exe -ExecutionPolicy Bypass -Command &quot;winget install -e --id Google.Chrome&quot;" class="w-full bg-slate-900/90 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
+          </div>
+
+        </form>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- XML Preview Modal -->
+  <div id="xmlModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-card max-w-3xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-slate-800">
+        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
+          <i class="fa-solid fa-code text-sky-400"></i> Windows Sandbox XML (.wsb) 미리보기
+        </h3>
+        <button onclick="closeXmlModal()" class="text-slate-400 hover:text-slate-200 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 overflow-y-auto flex-1">
+        <pre><code id="xmlModalContent" class="block bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-code text-sky-300 leading-relaxed overflow-x-auto selection:bg-sky-600 selection:text-white"></code></pre>
+      </div>
+      <div class="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-900/50">
+        <button onclick="copyXmlToClipboard()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-copy"></i> 클립보드 복사
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeXmlModal()" type="button" class="px-3.5 py-1.5 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition">닫기</button>
+          <button onclick="exportWsbFile(); closeXmlModal();" type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow">
+            <i class="fa-solid fa-download"></i> 파일 다운로드
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('js'); ?>
+</body>
+</html>

@@ -1,0 +1,627 @@
+<script>
+// State Management
+let presetsState = {};
+let activePresetName = '';
+
+// Initial load on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  initDefaults();
+  loadPresetsFromLocalStorage();
+  syncCloudPresetsSilently();
+});
+
+// Default Presets initialization if empty
+function initDefaults() {
+  const localData = localStorage.getItem('WSB_PRESETS');
+  if (localData === null) {
+    const defaultPresets = {
+      "기본 샌드박스 (Default)": {
+        presetName: "기본 샌드박스 (Default)",
+        vGpu: "Default",
+        networking: "Default",
+        memoryInMB: "",
+        clipboard: "Default",
+        audioInput: "Default",
+        videoInput: "Default",
+        protectedClient: "Default",
+        printerRedirection: "Default",
+        mappedFolders: [
+          { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: true }
+        ],
+        logonCommand: ""
+      },
+      "개발자용 샌드박스 (VS Code & Winget)": {
+        presetName: "개발자용 샌드박스 (VS Code & Winget)",
+        vGpu: "Enable",
+        networking: "Default",
+        memoryInMB: "8192",
+        clipboard: "Default",
+        audioInput: "Default",
+        videoInput: "Disable",
+        protectedClient: "Default",
+        printerRedirection: "Disable",
+        mappedFolders: [
+          { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
+        ],
+        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`
+      }
+    };
+    presetsState = defaultPresets;
+    savePresetsToLocalStorage();
+  }
+}
+
+// ----------------------------------------------------
+// Form Data Collector & Setter
+// ----------------------------------------------------
+function collectFormData() {
+  const mappedFolders = [];
+  const folderRows = document.querySelectorAll('.folder-row');
+  folderRows.forEach(row => {
+    const hostFolder = row.querySelector('.host-folder').value.trim();
+    const sandboxFolder = row.querySelector('.sandbox-folder').value.trim();
+    const readOnly = row.querySelector('.read-only-toggle').checked;
+    if (hostFolder) {
+      mappedFolders.push({ hostFolder, sandboxFolder, readOnly });
+    }
+  });
+
+  return {
+    presetName: document.getElementById('presetName').value.trim() || 'Custom Sandbox',
+    vGpu: document.getElementById('vGpu').value,
+    networking: document.getElementById('networking').value,
+    memoryInMB: document.getElementById('memoryInMB').value,
+    clipboard: document.getElementById('clipboard').value,
+    audioInput: document.getElementById('audioInput').value,
+    videoInput: document.getElementById('videoInput').value,
+    protectedClient: document.getElementById('protectedClient').value,
+    printerRedirection: document.getElementById('printerRedirection').value,
+    mappedFolders: mappedFolders,
+    logonCommand: document.getElementById('logonCommand').value
+  };
+}
+
+function fillFormWithData(data) {
+  document.getElementById('presetName').value = data.presetName || '';
+  document.getElementById('vGpu').value = data.vGpu || 'Default';
+  document.getElementById('networking').value = data.networking || 'Default';
+  document.getElementById('memoryInMB').value = data.memoryInMB || '';
+  document.getElementById('clipboard').value = data.clipboard || 'Default';
+  document.getElementById('audioInput').value = data.audioInput || 'Default';
+  document.getElementById('videoInput').value = data.videoInput || 'Default';
+  document.getElementById('protectedClient').value = data.protectedClient || 'Default';
+  document.getElementById('printerRedirection').value = data.printerRedirection || 'Default';
+  document.getElementById('logonCommand').value = data.logonCommand || '';
+
+  // Render folder rows
+  const container = document.getElementById('folderContainer');
+  container.innerHTML = '';
+  if (data.mappedFolders && data.mappedFolders.length > 0) {
+    data.mappedFolders.forEach(folder => addFolderRow(folder));
+  } else {
+    addFolderRow(); // Add 1 empty row by default
+  }
+}
+
+// ----------------------------------------------------
+// Folder Mapping Dynamic Rows
+// ----------------------------------------------------
+function addFolderRow(folderData = {}) {
+  const container = document.getElementById('folderContainer');
+  const rowId = 'folder_row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+  const rowHtml = `
+    <div id="${rowId}" class="folder-row bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 relative group">
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+        <div class="sm:col-span-6">
+          <label class="block text-[10px] text-slate-400 mb-0.5">호스트 폴더 경로 (Host Folder)</label>
+          <input type="text" value="${escapeHtml(folderData.hostFolder || '')}" placeholder="예: C:\\Users\\Public\\Downloads" class="host-folder w-full bg-slate-950 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-sky-500 focus:outline-none font-code">
+        </div>
+        <div class="sm:col-span-4">
+          <label class="block text-[10px] text-slate-400 mb-0.5">샌드박스 내부 경로 (Sandbox Folder)</label>
+          <input type="text" value="${escapeHtml(folderData.sandboxFolder || '')}" placeholder="선택사항 (기본: Desktop)" class="sandbox-folder w-full bg-slate-950 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-sky-500 focus:outline-none font-code">
+        </div>
+        <div class="sm:col-span-2 flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-4">
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer selection:none">
+            <input type="checkbox" ${folderData.readOnly ? 'checked' : ''} class="read-only-toggle rounded border-slate-700 text-sky-500 focus:ring-sky-500 bg-slate-950">
+            <span class="text-[11px]">읽기 전용</span>
+          </label>
+          <button type="button" onclick="removeFolderRow('${rowId}')" class="text-slate-500 hover:text-rose-400 p-1 transition" title="행 삭제">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', rowHtml);
+}
+
+function removeFolderRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (row) {
+    row.remove();
+  }
+}
+
+function addDefaultDownloadsFolder() {
+  addFolderRow({
+    hostFolder: "C:\\Users\\Public\\Downloads",
+    sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads",
+    readOnly: true
+  });
+  showToast('Public Downloads 매핑 폴더가 추가되었습니다.', 'info');
+}
+
+function setQuickMemory(mb) {
+  document.getElementById('memoryInMB').value = mb;
+}
+
+// ----------------------------------------------------
+// Snippet Templates
+// ----------------------------------------------------
+function applySnippetTemplate() {
+  const select = document.getElementById('snippetSelect');
+  const val = select.value;
+  if (!val) return;
+
+  const logonCmd = document.getElementById('logonCommand');
+  let snippet = '';
+
+  switch (val) {
+    case 'winget-chrome':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
+      break;
+    case 'winget-vscode':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
+      break;
+    case 'winget-git':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements"`;
+      break;
+    case 'winget-dev-pack':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id 7zip.7zip --accept-package-agreements; winget install -e --id Notepad++.Notepad++ --accept-package-agreements; winget install -e --id Google.Chrome --accept-package-agreements"`;
+      break;
+    case 'open-browser':
+      snippet = `cmd.exe /c start https://google.com`;
+      break;
+    case 'ps1-desktop':
+      snippet = `powershell.exe -ExecutionPolicy Bypass -File C:\\Users\\WDAGUtilityAccount\\Desktop\\init.ps1`;
+      break;
+  }
+
+  if (snippet) {
+    logonCmd.value = snippet;
+    showToast('시작 스크립트 템플릿이 적용되었습니다.', 'success');
+  }
+  select.value = '';
+}
+
+// ----------------------------------------------------
+// XML Generation & Export
+// ----------------------------------------------------
+function generateWsbXml(formData) {
+  let xml = `<!-- WSB Manager Web Generated Config -->\n<Configuration>\n`;
+  if (formData.vGpu) xml += `  <VGpu>${formData.vGpu}</VGpu>\n`;
+  if (formData.networking) xml += `  <Networking>${formData.networking}</Networking>\n`;
+
+  // Mapped Folders
+  if (formData.mappedFolders && formData.mappedFolders.length > 0) {
+    xml += `  <MappedFolders>\n`;
+    formData.mappedFolders.forEach(folder => {
+      if (folder.hostFolder) {
+        xml += `    <MappedFolder>\n`;
+        xml += `      <HostFolder>${escapeXml(folder.hostFolder)}</HostFolder>\n`;
+        if (folder.sandboxFolder) {
+          xml += `      <SandboxFolder>${escapeXml(folder.sandboxFolder)}</SandboxFolder>\n`;
+        }
+        xml += `      <ReadOnly>${folder.readOnly ? 'true' : 'false'}</ReadOnly>\n`;
+        xml += `    </MappedFolder>\n`;
+      }
+    });
+    xml += `  </MappedFolders>\n`;
+  }
+
+  // Logon Command
+  if (formData.logonCommand && formData.logonCommand.trim() !== '') {
+    xml += `  <LogonCommand>\n`;
+    xml += `    <Command>${escapeXml(formData.logonCommand.trim())}</Command>\n`;
+    xml += `  </LogonCommand>\n`;
+  }
+
+  // Memory
+  if (formData.memoryInMB && parseInt(formData.memoryInMB) > 0) {
+    xml += `  <MemoryInMB>${parseInt(formData.memoryInMB)}</MemoryInMB>\n`;
+  }
+
+  // Device Redirections
+  if (formData.audioInput) xml += `  <AudioInput>${formData.audioInput}</AudioInput>\n`;
+  if (formData.videoInput) xml += `  <VideoInput>${formData.videoInput}</VideoInput>\n`;
+  if (formData.protectedClient) xml += `  <ProtectedClient>${formData.protectedClient}</ProtectedClient>\n`;
+  if (formData.printerRedirection) xml += `  <PrinterRedirection>${formData.printerRedirection}</PrinterRedirection>\n`;
+  if (formData.clipboard) xml += `  <ClipboardRedirection>${formData.clipboard}</ClipboardRedirection>\n`;
+
+  xml += `</Configuration>`;
+  return xml;
+}
+
+function exportWsbFile() {
+  const formData = collectFormData();
+  const xmlContent = generateWsbXml(formData);
+  const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8;' });
+  
+  const sanitizedFilename = (formData.presetName || 'sandbox_config').replace(/[/\\?%*:|"<>]/g, '_');
+  const filename = `${sanitizedFilename}.wsb`;
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showToast(`'${filename}' 파일 다운로드가 시작되었습니다.`, 'success');
+}
+
+function previewWsbXml() {
+  const formData = collectFormData();
+  const xmlContent = generateWsbXml(formData);
+  document.getElementById('xmlModalContent').textContent = xmlContent;
+  document.getElementById('xmlModal').classList.remove('hidden');
+}
+
+function closeXmlModal() {
+  document.getElementById('xmlModal').classList.add('hidden');
+}
+
+function copyXmlToClipboard() {
+  const xmlText = document.getElementById('xmlModalContent').textContent;
+  navigator.clipboard.writeText(xmlText).then(() => {
+    showToast('XML 코드가 클립보드에 복사되었습니다.', 'success');
+  }).catch(err => {
+    showToast('클립보드 복사 실패: ' + err, 'error');
+  });
+}
+
+// ----------------------------------------------------
+// Preset Management (Local & Cloud Sync)
+// ----------------------------------------------------
+function loadPresetsFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('WSB_PRESETS');
+    if (raw !== null) {
+      presetsState = JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  
+  const keys = Object.keys(presetsState);
+  if (keys.length > 0 && !activePresetName) {
+    loadPreset(keys[0]);
+  } else if (keys.length === 0) {
+    createNewPreset();
+  } else {
+    renderPresetList();
+  }
+}
+
+function savePresetsToLocalStorage() {
+  localStorage.setItem('WSB_PRESETS', JSON.stringify(presetsState));
+}
+
+function renderPresetList(filter = '') {
+  const listEl = document.getElementById('presetList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  const keys = Object.keys(presetsState).filter(k => k.toLowerCase().includes(filter.toLowerCase()));
+
+  if (keys.length === 0) {
+    listEl.innerHTML = `<li class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-folder-open block text-xl mb-1 text-slate-600"></i>저장된 프리셋이 없습니다.</li>`;
+    return;
+  }
+
+  keys.forEach(name => {
+    const isActive = name === activePresetName;
+    const item = document.createElement('li');
+    item.className = `preset-item glass-card-hover p-3 rounded-xl border border-slate-800 cursor-pointer flex items-center justify-between group ${isActive ? 'active' : ''}`;
+    
+    item.innerHTML = `
+      <div class="flex-1 pr-2 truncate" onclick="loadPreset('${escapeJsString(name)}')">
+        <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate">${escapeHtml(name)}</div>
+        <div class="text-[10px] text-slate-500 truncate mt-0.5">
+          vGPU: ${presetsState[name].vGpu || 'Default'} | Net: ${presetsState[name].networking || 'Default'}
+        </div>
+      </div>
+      <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition" title="삭제">
+        <i class="fa-solid fa-xmark text-xs"></i>
+      </button>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function loadPreset(name) {
+  if (presetsState[name]) {
+    activePresetName = name;
+    fillFormWithData(presetsState[name]);
+    renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+    showToast(`'${name}' 프리셋을 불러왔습니다.`, 'info');
+  }
+}
+
+function createNewPreset() {
+  activePresetName = '';
+  fillFormWithData({
+    presetName: "새 프리셋 " + (Object.keys(presetsState).length + 1),
+    vGpu: "Default",
+    networking: "Default",
+    memoryInMB: "",
+    clipboard: "Default",
+    audioInput: "Default",
+    videoInput: "Default",
+    protectedClient: "Default",
+    printerRedirection: "Default",
+    mappedFolders: [],
+    logonCommand: ""
+  });
+  renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+}
+
+function saveCurrentPreset() {
+  const data = collectFormData();
+  if (!data.presetName) {
+    showToast('프리셋 이름을 입력해주세요.', 'error');
+    return;
+  }
+
+  // If activePresetName changed (renamed), delete old key
+  if (activePresetName && activePresetName !== data.presetName && presetsState[activePresetName]) {
+    delete presetsState[activePresetName];
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.deletePresetFromCloud(activePresetName);
+    }
+  }
+
+  presetsState[data.presetName] = data;
+  activePresetName = data.presetName;
+  savePresetsToLocalStorage();
+  renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+
+  // Cloud sync if available
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success) {
+          showToast(`'${data.presetName}' 클라우드 및 로컬 저장 완료!`, 'success');
+        } else {
+          showToast(`로컬 저장 완료 (클라우드: ${res ? res.error : ''})`, 'info');
+        }
+      })
+      .savePresetToCloud(data.presetName, data);
+  } else {
+    showToast(`'${data.presetName}' 프리셋이 로컬에 저장되었습니다.`, 'success');
+  }
+}
+
+function deleteCurrentPreset() {
+  const inputName = document.getElementById('presetName').value.trim();
+  const targetName = (activePresetName && presetsState[activePresetName]) ? activePresetName : (presetsState[inputName] ? inputName : null);
+
+  if (targetName) {
+    deletePresetByName(targetName);
+  } else {
+    // If the form has unsaved content, just reset form
+    activePresetName = '';
+    createNewPreset();
+    showToast('작성 중인 폼 내용이 초기화되었습니다.', 'info');
+  }
+}
+
+function deletePresetByName(name) {
+  if (!name) return;
+  if (confirm(`'${name}' 프리셋을 삭제하시겠습니까?`)) {
+    if (presetsState[name]) {
+      delete presetsState[name];
+      savePresetsToLocalStorage();
+
+      // Cloud Deletion Trigger (both method names supported)
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        if (Object.keys(presetsState).length === 0) {
+          google.script.run.clearAllPresetsFromCloud();
+        } else {
+          google.script.run.deletePresetFromCloud(name);
+        }
+      }
+
+      const remainingKeys = Object.keys(presetsState);
+      if (remainingKeys.length > 0) {
+        if (activePresetName === name) {
+          loadPreset(remainingKeys[0]);
+        } else {
+          renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+        }
+      } else {
+        activePresetName = '';
+        createNewPreset();
+      }
+      showToast(`'${name}' 프리셋이 삭제되었습니다.`, 'info');
+    } else {
+      activePresetName = '';
+      createNewPreset();
+    }
+  }
+}
+
+function filterPresets() {
+  const filter = document.getElementById('presetSearch').value;
+  renderPresetList(filter);
+}
+
+// ----------------------------------------------------
+// GAS Cloud Sync & Drive Backup Functions
+// ----------------------------------------------------
+function syncCloudPresets() {
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    showToast('구글 클라우드에서 프리셋을 동기화하는 중...', 'info');
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success && res.data) {
+          presetsState = res.data;
+          savePresetsToLocalStorage();
+          
+          const keys = Object.keys(presetsState);
+          if (keys.length > 0) {
+            if (!activePresetName || !presetsState[activePresetName]) {
+              loadPreset(keys[0]);
+            } else {
+              renderPresetList();
+            }
+          } else {
+            createNewPreset();
+          }
+          showToast('구글 클라우드 프리셋 동기화가 완료되었습니다.', 'success');
+        } else {
+          showToast('클라우드 동기화 실패: ' + (res ? res.error : '알 수 없는 오류'), 'error');
+        }
+      })
+      .getPresetsFromCloud();
+  } else {
+    showToast('GAS 환경에서만 클라우드 동기화가 지원됩니다. (로컬 모드 실행 중)', 'info');
+  }
+}
+
+function syncCloudPresetsSilently() {
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success && res.data) {
+          presetsState = res.data;
+          savePresetsToLocalStorage();
+          
+          const keys = Object.keys(presetsState);
+          if (keys.length > 0) {
+            if (!activePresetName || !presetsState[activePresetName]) {
+              loadPreset(keys[0]);
+            } else {
+              renderPresetList();
+            }
+          } else {
+            createNewPreset();
+          }
+        }
+      })
+      .getPresetsFromCloud();
+  }
+}
+
+function backupDrive() {
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    showToast('Google Drive에 백업 생성 중...', 'info');
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success) {
+          showToast(res.message, 'success');
+        } else {
+          showToast(res ? res.error : 'Drive 백업 실패', 'error');
+        }
+      })
+      .exportPresetsToDrive();
+  } else {
+    showToast('GAS 백엔드가 연결된 환경에서만 Google Drive 백업이 가능합니다.', 'info');
+  }
+}
+
+// ----------------------------------------------------
+// Import / Export JSON Local Files
+// ----------------------------------------------------
+function exportPresetsJson() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(presetsState, null, 2));
+  const link = document.createElement('a');
+  link.setAttribute("href", dataStr);
+  link.setAttribute("download", `wsb_presets_export_${new Date().toISOString().slice(0,10)}.json`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  showToast('프리셋 JSON 파일 내보내기가 완료되었습니다.', 'success');
+}
+
+function importPresetsJson(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (typeof imported === 'object') {
+        presetsState = Object.assign({}, presetsState, imported);
+        savePresetsToLocalStorage();
+        renderPresetList();
+        showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
+      }
+    } catch (err) {
+      showToast('올바르지 않은 JSON 파일 포맷입니다.', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ----------------------------------------------------
+// Utilities & Helpers
+// ----------------------------------------------------
+function escapeXml(unsafe) {
+  if (!unsafe) return '';
+  return String(unsafe).replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeJsString(str) {
+  if (!str) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  
+  let bgColor = 'bg-slate-900 border-slate-700 text-slate-200';
+  let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
+
+  if (type === 'success') {
+    bgColor = 'bg-slate-900 border-emerald-500/50 text-emerald-300';
+    icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+  } else if (type === 'error') {
+    bgColor = 'bg-slate-900 border-rose-500/50 text-rose-300';
+    icon = '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>';
+  }
+
+  toast.className = `animate-fade-in-down ${bgColor} border px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2.5 pointer-events-auto min-w-[240px]`;
+  toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'all 0.3s ease-out';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+</script>
