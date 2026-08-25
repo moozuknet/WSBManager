@@ -2,13 +2,34 @@
 // State Management
 let presetsState = {};
 let activePresetName = '';
+let presetSortMode = 'updated-desc';
 
 // Initial load on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   initDefaults();
+  loadSortModeFromStorage();
   loadPresetsFromLocalStorage();
   syncCloudPresetsSilently();
 });
+
+function loadSortModeFromStorage() {
+  try {
+    const saved = localStorage.getItem('WSB_PRESET_SORT_MODE');
+    if (saved) {
+      presetSortMode = saved;
+      const select = document.getElementById('presetSortSelect');
+      if (select) select.value = saved;
+    }
+  } catch (e) {}
+}
+
+function changePresetSortMode(mode) {
+  presetSortMode = mode;
+  try {
+    localStorage.setItem('WSB_PRESET_SORT_MODE', mode);
+  } catch (e) {}
+  renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+}
 
 // Default Presets initialization if empty
 function initDefaults() {
@@ -29,7 +50,8 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: true }
         ],
-        logonCommand: ""
+        logonCommand: "",
+        updatedAt: new Date(Date.now() - 60000).toISOString()
       },
       "개발자용 샌드박스 (VS Code & Winget)": {
         presetName: "개발자용 샌드박스 (VS Code & Winget)",
@@ -45,7 +67,8 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
         ],
-        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`
+        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`,
+        updatedAt: new Date().toISOString()
       }
     };
     presetsState = defaultPresets;
@@ -80,7 +103,8 @@ function collectFormData() {
     protectedClient: document.getElementById('protectedClient').value,
     printerRedirection: document.getElementById('printerRedirection').value,
     mappedFolders: mappedFolders,
-    logonCommand: document.getElementById('logonCommand').value
+    logonCommand: document.getElementById('logonCommand').value,
+    updatedAt: new Date().toISOString()
   };
 }
 
@@ -340,6 +364,25 @@ function renderPresetList(filter = '') {
     const matchName = k.toLowerCase().includes(filter.toLowerCase());
     const matchDesc = p.presetDescription && p.presetDescription.toLowerCase().includes(filter.toLowerCase());
     return matchName || matchDesc;
+  });
+
+  keys.sort((a, b) => {
+    const itemA = presetsState[a] || {};
+    const itemB = presetsState[b] || {};
+
+    if (presetSortMode === 'name-asc') {
+      return a.localeCompare(b, 'ko');
+    } else if (presetSortMode === 'name-desc') {
+      return b.localeCompare(a, 'ko');
+    } else if (presetSortMode === 'updated-asc') {
+      const timeA = new Date(itemA.updatedAt || 0).getTime();
+      const timeB = new Date(itemB.updatedAt || 0).getTime();
+      return timeA - timeB;
+    } else {
+      const timeA = new Date(itemA.updatedAt || 0).getTime();
+      const timeB = new Date(itemB.updatedAt || 0).getTime();
+      return timeB - timeA;
+    }
   });
 
   if (keys.length === 0) {
