@@ -31,7 +31,7 @@
           <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300 flex items-center gap-2">
             WSB Manager Web
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-medium">GAS Edition</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.35-FIXED</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.38-WINGET</span>
           </h1>
           <p class="text-xs sm:text-sm text-slate-400">Windows Sandbox (.wsb) 설정 관리 및 원클릭 XML 빌더</p>
         </div>
@@ -270,15 +270,25 @@
               <!-- Snippet Template Selector -->
               <div class="flex items-center gap-2">
                 <select id="snippetSelect" onchange="applySnippetTemplate()" class="bg-slate-900 border border-slate-700 text-xs text-sky-300 rounded-lg px-2.5 py-1 focus:outline-none">
-                  <option value="" selected>⚡ 빠른 스크립트 템플릿 선택 (100% 호환)...</option>
-                  <option value="chrome">🌐 Google Chrome 무소음 자동 설치</option>
-                  <option value="vscode">💻 VS Code 무소음 자동 설치</option>
-                  <option value="git">🐙 Git for Windows 무소음 설치</option>
-                  <option value="7zip">📦 7-Zip 압축 프로그램 설치</option>
-                  <option value="notepadpp">📝 Notepad++ 편집기 설치</option>
-                  <option value="dev-pack">🚀 필수 개발 툴 팩 (Chrome + VS Code)</option>
-                  <option value="open-browser">🌐 부팅 시 특정 웹사이트 자동 열기</option>
-                  <option value="ps1-desktop">📜 매핑 폴더(Downloads)의 init.ps1 실행</option>
+                  <option value="" selected>⚡ 빠른 스크립트 템플릿 선택...</option>
+                  <optgroup label="📦 Winget 패키지 매니저 방식">
+                    <option value="winget-chrome">Winget: Google Chrome 자동 설치</option>
+                    <option value="winget-vscode">Winget: VS Code 자동 설치</option>
+                    <option value="winget-git">Winget: Git for Windows 설치</option>
+                    <option value="winget-7zip">Winget: 7-Zip 압축 프로그램 설치</option>
+                    <option value="winget-notepadpp">Winget: Notepad++ 편집기 설치</option>
+                    <option value="winget-dev-pack">Winget: 개발자 필수 툴 팩 (Chrome + VS Code)</option>
+                    <option value="winget-bootstrap">Winget: Winget 모듈 자동 설치 후 Chrome 설치</option>
+                  </optgroup>
+                  <optgroup label="🌐 직접 무소음(Silent) 다운로드 방식">
+                    <option value="direct-chrome">Direct: Google Chrome 직접 설치</option>
+                    <option value="direct-vscode">Direct: VS Code 직접 설치</option>
+                    <option value="direct-git">Direct: Git for Windows 직접 설치</option>
+                  </optgroup>
+                  <optgroup label="⚙️ 기타 유틸리티">
+                    <option value="open-browser">cmd: 부팅 시 특정 웹사이트 자동 열기</option>
+                    <option value="ps1-desktop">powershell: 매핑 폴더(Downloads)의 init.ps1 실행</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
