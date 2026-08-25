@@ -66,7 +66,7 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
         ],
-        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`,
+        logonCommand: `powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'VS Code 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\vscode.exe' 'https://update.code.visualstudio.com/latest/win32-x64-user/stable'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent', '/suppressmsgboxes' -Wait; Write-Host 'VS Code 설치 완벽 완료!'"` ,
         updatedAt: new Date().toISOString()
       }
     };
@@ -363,6 +363,18 @@ function loadPresetsFromLocalStorage() {
     const raw = localStorage.getItem('WSB_PRESETS');
     if (raw !== null) {
       presetsState = JSON.parse(raw);
+      // Auto-clean & migrate legacy &amp; or old VS Code URLs in saved presets
+      Object.keys(presetsState).forEach(k => {
+        if (presetsState[k] && presetsState[k].logonCommand) {
+          presetsState[k].logonCommand = presetsState[k].logonCommand
+            .replace(/&amp;/g, '&')
+            .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+            .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&amp;os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+            .replace(/Chrome &amp; VS Code/g, 'Chrome 및 VS Code')
+            .replace(/Chrome & VS Code/g, 'Chrome 및 VS Code');
+        }
+      });
+      savePresetsToLocalStorage();
     }
   } catch (e) {
     console.error(e);
