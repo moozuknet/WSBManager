@@ -31,7 +31,7 @@
           <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300 flex items-center gap-2">
             WSB Manager Web
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-medium">GAS Edition</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.55-PERFECT</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-mono font-bold">v1.0.60-XMLIMPORT</span>
           </h1>
           <p class="text-xs sm:text-sm text-slate-400">Windows Sandbox (.wsb) 설정 관리 및 원클릭 XML 빌더</p>
         </div>
@@ -69,9 +69,14 @@
             <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm sm:text-base">
               <i class="fa-solid fa-bookmark text-sky-400"></i> 저장된 프리셋 목록
             </h2>
-            <button onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-medium">
-              <i class="fa-solid fa-plus"></i> 신규 작성
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openXmlImportModal()" type="button" class="text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-2 py-1 rounded-lg transition flex items-center gap-1 font-medium" title="XML 코드를 붙여넣어 프리셋 생성">
+                <i class="fa-solid fa-paste"></i> XML 붙여넣기
+              </button>
+              <button onclick="createNewPreset()" type="button" class="text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 px-2 py-1 rounded-lg transition flex items-center gap-1 font-medium">
+                <i class="fa-solid fa-plus"></i> 신규 작성
+              </button>
+            </div>
           </div>
 
           <!-- Preset Search Filter & Drag Reorder Hint -->
@@ -328,6 +333,41 @@
             <i class="fa-solid fa-download"></i> 파일 다운로드
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XML Import Modal -->
+  <div id="xmlImportModal" style="display: none !important;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="glass-card max-w-2xl w-full mx-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-slate-800">
+        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
+          <i class="fa-solid fa-paste text-emerald-400"></i> XML 코드 붙여넣기로 프리셋 생성
+        </h3>
+        <button onclick="closeXmlImportModal()" class="text-slate-400 hover:text-slate-200 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3 overflow-y-auto flex-1">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          기존 <code class="text-sky-300 font-code bg-slate-900 px-1 py-0.5 rounded">.wsb</code> XML 설정 파일 내용이나 텍스트를 아래 상자에 붙여넣으세요. 설정값이 자동으로 분석되어 새로운 프리셋으로 등록됩니다.
+        </p>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">생성될 프리셋 이름 (선택사항)</label>
+          <input type="text" id="importPresetNameInput" placeholder="예: 붙여넣기로 가져온 샌드박스 (미입력 시 자동 부여)" class="w-full bg-slate-900/90 border border-slate-800 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">XML 코드 붙여넣기</label>
+          <textarea id="xmlImportTextarea" rows="10" placeholder="<Configuration>&#10;  <VGpu>Enable</VGpu>&#10;  <Networking>Default</Networking>&#10;  <MappedFolders>...&#10;</Configuration>" class="w-full bg-slate-900/90 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 text-xs font-code text-slate-200 focus:outline-none transition leading-relaxed"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 p-4 border-t border-slate-800 bg-slate-900/50">
+        <button onclick="closeXmlImportModal()" type="button" class="px-4 py-2 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition">취소</button>
+        <button onclick="importXmlFromTextarea()" type="button" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> 설정값 분석 및 프리셋 생성
+        </button>
       </div>
     </div>
   </div>

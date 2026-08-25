@@ -729,6 +729,132 @@ function importPresetsJson(event) {
 }
 
 // ----------------------------------------------------
+// XML Paste / Textarea Import Feature
+// ----------------------------------------------------
+function openXmlImportModal() {
+  document.getElementById('xmlImportTextarea').value = '';
+  document.getElementById('importPresetNameInput').value = '';
+  const modal = document.getElementById('xmlImportModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
+  }
+}
+
+function closeXmlImportModal() {
+  const modal = document.getElementById('xmlImportModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.display = 'none';
+  }
+}
+
+function importXmlFromTextarea() {
+  const rawText = document.getElementById('xmlImportTextarea').value;
+  if (!rawText || rawText.trim() === '') {
+    showToast('붙여넣을 XML 코드를 입력해주세요.', 'warning');
+    return;
+  }
+
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(rawText, 'text/xml');
+
+    const parserError = xmlDoc.getElementsByTagName('parsererror');
+    if (parserError.length > 0) {
+      showToast('올바르지 않은 XML 형식입니다. 태그 구문을 확인해주세요.', 'error');
+      return;
+    }
+
+    const configNode = xmlDoc.getElementsByTagName('Configuration')[0];
+    if (!configNode) {
+      showToast('<Configuration> 태그를 찾을 수 없습니다.', 'error');
+      return;
+    }
+
+    const getTagValue = (tagName, defaultVal = '') => {
+      const el = configNode.getElementsByTagName(tagName)[0];
+      return el ? el.textContent.trim() : defaultVal;
+    };
+
+    let customName = document.getElementById('importPresetNameInput').value.trim();
+    if (!customName) {
+      const commentMatch = rawText.match(/Preset Name\s*:\s*([^\r\n]+)/i);
+      if (commentMatch && commentMatch[1]) {
+        customName = commentMatch[1].trim();
+      } else {
+        customName = 'XML 가져온 프리셋 (' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + ')';
+      }
+    }
+
+    let customDesc = '';
+    const descMatch = rawText.match(/Description\s*:\s*([^\r\n]+)/i);
+    if (descMatch && descMatch[1]) {
+      customDesc = descMatch[1].trim();
+    } else {
+      customDesc = '붙여넣은 XML 코드에서 추출된 설정값';
+    }
+
+    const mappedFolders = [];
+    const mappedFoldersNode = configNode.getElementsByTagName('MappedFolders')[0];
+    if (mappedFoldersNode) {
+      const folderNodes = mappedFoldersNode.getElementsByTagName('MappedFolder');
+      for (let i = 0; i < folderNodes.length; i++) {
+        const node = folderNodes[i];
+        const hf = node.getElementsByTagName('HostFolder')[0] ? node.getElementsByTagName('HostFolder')[0].textContent.trim() : '';
+        const sf = node.getElementsByTagName('SandboxFolder')[0] ? node.getElementsByTagName('SandboxFolder')[0].textContent.trim() : '';
+        const roText = node.getElementsByTagName('ReadOnly')[0] ? node.getElementsByTagName('ReadOnly')[0].textContent.trim().toLowerCase() : 'false';
+        if (hf) {
+          mappedFolders.push({
+            hostFolder: hf,
+            sandboxFolder: sf,
+            readOnly: roText === 'true'
+          });
+        }
+      }
+    }
+
+    let logonCmd = '';
+    const logonNode = configNode.getElementsByTagName('LogonCommand')[0];
+    if (logonNode) {
+      const cmdNode = logonNode.getElementsByTagName('Command')[0];
+      if (cmdNode) {
+        logonCmd = cmdNode.textContent.trim().replace(/&amp;/g, '&');
+      }
+    }
+
+    const newPresetObj = {
+      presetName: customName,
+      presetDescription: customDesc,
+      vGpu: getTagValue('VGpu', 'Default'),
+      networking: getTagValue('Networking', 'Default'),
+      memoryInMB: getTagValue('MemoryInMB', '0'),
+      clipboard: getTagValue('ClipboardRedirection', getTagValue('Clipboard', 'Default')),
+      audioInput: getTagValue('AudioInput', 'Default'),
+      videoInput: getTagValue('VideoInput', 'Default'),
+      protectedClient: getTagValue('ProtectedClient', 'Default'),
+      printerRedirection: getTagValue('PrinterRedirection', 'Default'),
+      mappedFolders: mappedFolders,
+      logonCommand: logonCmd,
+      updatedAt: new Date().toISOString()
+    };
+
+    presetsState[customName] = newPresetObj;
+    savePresetsToLocalStorage();
+    renderPresetList();
+    loadPreset(customName);
+    closeXmlImportModal();
+    showToast(`XML에서 프리셋 '${customName}'이(가) 성공적으로 생성되었습니다!`, 'success');
+
+  } catch (err) {
+    console.error(err);
+    showToast('XML 해석 중 오류가 발생했습니다: ' + err.message, 'error');
+  }
+}
+
+// ----------------------------------------------------
 // Utilities & Helpers
 // ----------------------------------------------------
 function escapeXml(unsafe) {
