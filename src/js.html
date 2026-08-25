@@ -197,33 +197,33 @@ function applySnippetTemplate() {
   switch (val) {
     // 📦 Winget Package Manager Templates (Auto-Bootstrap Winget first)
     case 'winget-chrome':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'winget-vscode':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'winget-git':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'winget-7zip':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id 7zip.7zip --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id 7zip.7zip --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'winget-notepadpp':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Notepad++.Notepad++ --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Notepad++.Notepad++ --accept-package-agreements --accept-source-agreements"`;
       break;
     case 'winget-dev-pack':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements; winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Invoke-WebRequest -Uri 'https://aka.ms/getwinget' -OutFile '$env:TEMP\\winget.msixbundle'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements; winget install -e --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements"`;
       break;
 
     // 🌐 Direct Web Installer Templates
     case 'direct-chrome':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$env:TEMP\\chrome.exe'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent /install' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile '$env:TEMP\\chrome.exe'; Start-Process '$env:TEMP\\chrome.exe' -ArgumentList '/silent /install' -Wait"`;
       break;
     case 'direct-vscode':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user' -OutFile '$env:TEMP\\vscode.exe'; Start-Process '$env:TEMP\\vscode.exe' -ArgumentList '/verysilent /suppressmsgboxes' -Wait"`;
       break;
     case 'direct-git':
-      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe' -OutFile '$env:TEMP\\git.exe'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT /NORESTART' -Wait"`;
+      snippet = `powershell.exe -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe' -OutFile '$env:TEMP\\git.exe'; Start-Process '$env:TEMP\\git.exe' -ArgumentList '/VERYSILENT /NORESTART' -Wait"`;
       break;
 
     // ⚙️ Utilities
