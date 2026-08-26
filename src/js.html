@@ -373,11 +373,46 @@ function closeXmlModal() {
 
 function copyXmlToClipboard() {
   const xmlText = document.getElementById('xmlModalContent').textContent;
-  navigator.clipboard.writeText(xmlText).then(() => {
-    showToast('XML 코드가 클립보드에 복사되었습니다.', 'success');
-  }).catch(err => {
+  if (!xmlText) {
+    showToast('복사할 XML 내용이 없습니다.', 'warning');
+    return;
+  }
+
+  const handleSuccess = () => {
+    showToast('📋 XML 설정 코드가 클립보드에 성공적으로 복사되었습니다!', 'success');
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(xmlText).then(handleSuccess).catch(() => {
+      fallbackCopyTextToClipboard(xmlText, handleSuccess);
+    });
+  } else {
+    fallbackCopyTextToClipboard(xmlText, handleSuccess);
+  }
+}
+
+function fallbackCopyTextToClipboard(text, successCallback) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    if (successful && successCallback) {
+      successCallback();
+    } else {
+      showToast('클립보드 복사에 실패했습니다.', 'error');
+    }
+  } catch (err) {
     showToast('클립보드 복사 실패: ' + err, 'error');
-  });
+  }
+  document.body.removeChild(textArea);
 }
 
 // ----------------------------------------------------
