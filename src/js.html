@@ -766,41 +766,45 @@ function importPresetsJson(event) {
 // XML / .wsb File & Textarea Import Feature
 // ----------------------------------------------------
 function initWsbDropZone() {
-  // Prevent browser window / document from navigating to dropped files anywhere
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    window.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, false);
-    document.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, false);
+  const preventBrowserDrop = (e) => {
+    e = e || window.event;
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    return false;
+  };
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evtName => {
+    window.addEventListener(evtName, preventBrowserDrop, true);
+    document.addEventListener(evtName, preventBrowserDrop, true);
   });
+
+  window.ondragover = preventBrowserDrop;
+  window.ondrop = preventBrowserDrop;
+  document.ondragover = preventBrowserDrop;
+  document.ondrop = preventBrowserDrop;
 
   const dropZone = document.getElementById('wsbDropZone');
   if (!dropZone) return;
 
   dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    preventBrowserDrop(e);
     dropZone.classList.add('border-emerald-500', 'bg-emerald-950/30');
-  });
+  }, true);
 
   dropZone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    preventBrowserDrop(e);
     dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
-  });
+  }, true);
 
   dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    preventBrowserDrop(e);
     dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
     if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processWsbFile(e.dataTransfer.files[0]);
     }
-  });
+  }, true);
 }
 
 function handleWsbFileSelect(event) {
