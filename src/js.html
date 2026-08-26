@@ -534,14 +534,19 @@ function renderPresetList(filter = '') {
           </div>
         </div>
       </div>
-      <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="delete-preset-btn text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition" title="삭제">
-        <i class="fa-solid fa-xmark text-xs"></i>
-      </button>
+      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+        <button onclick="event.stopPropagation(); duplicatePresetByName('${escapeJsString(name)}')" class="duplicate-preset-btn text-slate-500 hover:text-sky-300 p-1 transition" title="다른 이름으로 복제">
+          <i class="fa-solid fa-clone text-xs"></i>
+        </button>
+        <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="delete-preset-btn text-slate-600 hover:text-rose-400 p-1 transition" title="삭제">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
     `;
 
     // Click anywhere on preset card to select
     item.addEventListener('click', (e) => {
-      if (e.target.closest('.delete-preset-btn') || e.target.closest('.drag-handle')) {
+      if (e.target.closest('.delete-preset-btn') || e.target.closest('.duplicate-preset-btn') || e.target.closest('.drag-handle')) {
         return;
       }
       loadPreset(name);
@@ -693,6 +698,59 @@ function saveCurrentPreset() {
       .savePresetToCloud(data.presetName, data);
   } else {
     showToast(`'${data.presetName}' 프리셋이 로컬에 저장되었습니다.`, 'success');
+  }
+}
+
+function duplicateCurrentPreset() {
+  const data = collectFormData();
+  if (!data.presetName) {
+    showToast('프리셋 이름을 입력해주세요.', 'error');
+    return;
+  }
+
+  const currentName = data.presetName.trim();
+  const newName = getUniquePresetName(currentName);
+  
+  data.presetName = newName;
+  data.updatedAt = new Date().toISOString();
+
+  activePresetName = newName;
+  presetsState[newName] = data;
+  savePresetsToLocalStorage();
+
+  const nameInput = document.getElementById('presetName');
+  if (nameInput) nameInput.value = newName;
+
+  renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler((res) => {
+        showToast(`'${newName}'(으)로 다른 이름으로 저장되었습니다!`, 'success');
+      })
+      .savePresetToCloud(newName, data);
+  } else {
+    showToast(`'${newName}'(으)로 다른 이름으로 저장되었습니다.`, 'success');
+  }
+}
+
+function duplicatePresetByName(targetName) {
+  if (!presetsState[targetName]) return;
+  const original = presetsState[targetName];
+  const newName = getUniquePresetName(targetName);
+
+  const copiedData = JSON.parse(JSON.stringify(original));
+  copiedData.presetName = newName;
+  copiedData.updatedAt = new Date().toISOString();
+
+  presetsState[newName] = copiedData;
+  savePresetsToLocalStorage();
+
+  loadPreset(newName);
+  showToast(`'${targetName}' 프리셋이 '${newName}'(으)로 복제되었습니다.`, 'success');
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run.savePresetToCloud(newName, copiedData);
   }
 }
 
