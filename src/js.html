@@ -12,7 +12,33 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPresetsFromLocalStorage();
   syncCloudPresetsSilently();
   initWsbDropZone();
+  initModalCloseEvents();
 });
+
+function initModalCloseEvents() {
+  // ESC key shortcut listener to close active modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      closeXmlModal();
+      closeXmlImportModal();
+    }
+  });
+
+  // Backdrop click to close modals
+  const xmlModal = document.getElementById('xmlModal');
+  if (xmlModal) {
+    xmlModal.addEventListener('click', (e) => {
+      if (e.target === xmlModal) closeXmlModal();
+    });
+  }
+
+  const xmlImportModal = document.getElementById('xmlImportModal');
+  if (xmlImportModal) {
+    xmlImportModal.addEventListener('click', (e) => {
+      if (e.target === xmlImportModal) closeXmlImportModal();
+    });
+  }
+}
 
 function loadPresetOrderFromStorage() {
   try {
