@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPresetOrderFromStorage();
   loadPresetsFromLocalStorage();
   syncCloudPresetsSilently();
+  initWsbDropZone();
 });
 
 function loadPresetOrderFromStorage() {
@@ -733,11 +734,82 @@ function importPresetsJson(event) {
 }
 
 // ----------------------------------------------------
-// XML Paste / Textarea Import Feature
+// XML / .wsb File & Textarea Import Feature
 // ----------------------------------------------------
+function initWsbDropZone() {
+  const dropZone = document.getElementById('wsbDropZone');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'INPUT') {
+      const input = document.getElementById('wsbFileInput');
+      if (input) input.click();
+    }
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-emerald-500', 'bg-emerald-950/30');
+  });
+
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processWsbFile(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+function handleWsbFileSelect(event) {
+  if (event.target.files && event.target.files.length > 0) {
+    processWsbFile(event.target.files[0]);
+  }
+}
+
+function processWsbFile(file) {
+  if (!file) return;
+
+  const fileName = file.name;
+  const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+  if (ext !== '.wsb' && ext !== '.xml') {
+    showToast('.wsb 또는 .xml 파일만 업로드할 수 있습니다.', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target.result;
+    document.getElementById('xmlImportTextarea').value = content;
+    
+    // Set preset name input based on filename without extension
+    const baseName = fileName.replace(/\.(wsb|xml)$/i, '');
+    const presetNameInput = document.getElementById('importPresetNameInput');
+    if (!presetNameInput.value.trim()) {
+      presetNameInput.value = baseName;
+    }
+
+    const statusEl = document.getElementById('wsbFileStatus');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(fileName)}</span> 파일 로드 완료!`;
+    }
+    showToast(`'${fileName}' 파일의 내용이 로드되었습니다. '설정값 분석 및 프리셋 생성'을 클릭하세요.`, 'info');
+  };
+  reader.readAsText(file);
+}
+
 function openXmlImportModal() {
   document.getElementById('xmlImportTextarea').value = '';
   document.getElementById('importPresetNameInput').value = '';
+  const statusEl = document.getElementById('wsbFileStatus');
+  if (statusEl) {
+    statusEl.textContent = '.wsb 또는 .xml 파일 지원';
+  }
   const modal = document.getElementById('xmlImportModal');
   if (modal) {
     modal.classList.remove('hidden');
