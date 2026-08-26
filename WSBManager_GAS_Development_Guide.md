@@ -60,12 +60,11 @@ WSBManager/
 ├── package.json                  # 자동 배포 스크립트 모음
 ├── README.md                     # 프로젝트 설명 및 개발 가이드
 ├── WSBManager_GAS_Development_Guide.md  # 구글 Apps Script 개발 가이드 문서
-├── install-dev-tools.ps1         # 루트 개발자 환경 설치 스크립트 백업
 ├── docs/
 │   └── images/
 │       └── wsb_manager_main.png  # 메인 UI 스크린샷 이미지
 ├── scripts/
-│   └── install-dev-tools.ps1     # GitHub Raw 원격 다운로드용 커스텀 설치 스크립트
+│   └── install-dev-tools.ps1     # GitHub Raw 원격 다운로드용 커스텀 설치 스크립트 모듈
 └── src/
     ├── appsscript.json           # Google Apps Script 웹 앱 매니페스트
     ├── Code.js                   # GAS 백엔드 진입점 (doGet 및 Cloud API)
