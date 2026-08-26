@@ -612,10 +612,31 @@ function loadPreset(name) {
   }
 }
 
+function getUniquePresetName(baseName) {
+  if (!baseName || baseName.trim() === '') baseName = '새 프리셋';
+  baseName = baseName.trim();
+  
+  if (!presetsState[baseName]) {
+    return baseName;
+  }
+  
+  // Strip trailing (N) if present to get clean base name, e.g. "새이름 (2)" -> "새이름"
+  let cleanBase = baseName.replace(/\s*\(\d+\)$/, '');
+
+  let counter = 2;
+  let candidate = `${cleanBase} (${counter})`;
+  while (presetsState[candidate]) {
+    counter++;
+    candidate = `${cleanBase} (${counter})`;
+  }
+  return candidate;
+}
+
 function createNewPreset() {
   activePresetName = '';
+  const newName = getUniquePresetName('새 프리셋');
   fillFormWithData({
-    presetName: "새 프리셋 " + (Object.keys(presetsState).length + 1),
+    presetName: newName,
     presetDescription: "",
     vGpu: "Default",
     networking: "Default",
@@ -644,6 +665,14 @@ function saveCurrentPreset() {
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run.deletePresetFromCloud(activePresetName);
     }
+  }
+
+  // Auto-generate unique name if saving a new or renamed preset that collides with another existing preset
+  if (activePresetName !== data.presetName && presetsState[data.presetName]) {
+    data.presetName = getUniquePresetName(data.presetName);
+    const nameInput = document.getElementById('presetName');
+    if (nameInput) nameInput.value = data.presetName;
+    showToast(`중복된 이름이 존재하여 '${data.presetName}'(으)로 새로 저장되었습니다.`, 'info');
   }
 
   presetsState[data.presetName] = data;
@@ -1046,9 +1075,12 @@ function importXmlFromTextarea() {
       if (commentMatch && commentMatch[1]) {
         customName = commentMatch[1].trim();
       } else {
-        customName = '가져온 프리셋 (' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + ')';
+        customName = '가져온 프리셋';
       }
     }
+
+    // Auto-generate unique preset name if duplicate exists
+    customName = getUniquePresetName(customName);
 
     let customDesc = '';
     const descMatch = rawText.match(/Description\s*:\s*([^\r\n]+)/i);
