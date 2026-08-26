@@ -373,13 +373,32 @@ function closeXmlModal() {
 
 function copyXmlToClipboard() {
   const xmlText = document.getElementById('xmlModalContent').textContent;
-  if (!xmlText) {
-    showToast('복사할 XML 내용이 없습니다.', 'warning');
-    return;
-  }
+  if (!xmlText) return;
+
+  const btn = document.getElementById('copyXmlBtn');
+  const badge = document.getElementById('copyXmlBadge');
 
   const handleSuccess = () => {
-    showToast('📋 XML 설정 코드가 클립보드에 성공적으로 복사되었습니다!', 'success');
+    // Visual feedback directly inside modal window
+    if (btn) {
+      btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-emerald-950/50";
+      btn.innerHTML = `<i class="fa-solid fa-check"></i> <span id="copyXmlBtnText">복사 완료!</span>`;
+    }
+
+    if (badge) {
+      badge.classList.remove('hidden');
+    }
+
+    // Revert back after 2.5 seconds
+    setTimeout(() => {
+      if (btn) {
+        btn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition";
+        btn.innerHTML = `<i class="fa-solid fa-copy"></i> <span id="copyXmlBtnText">클립보드 복사</span>`;
+      }
+      if (badge) {
+        badge.classList.add('hidden');
+      }
+    }, 2500);
   };
 
   if (navigator.clipboard && window.isSecureContext) {
