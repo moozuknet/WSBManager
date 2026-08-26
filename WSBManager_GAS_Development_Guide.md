@@ -1,7 +1,7 @@
 # WSB Manager (Google Apps Script Web App 버전) 개발 가이드 및 기술 명세서
 
 > **프로젝트 개요**: Nia-TN1012의 C#/UWP 기반 오픈소스 프로젝트인 **WSBManager**를 Google Apps Script(GAS) 기반의 서버리스 웹 애플리케이션으로 전면 포팅 및 고도화 개발한 프로젝트입니다.  
-> 🌐 **Permanent Web App URL**: [https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec](https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec)  
+> 🌐 **Web App URL**: `https://script.google.com/macros/s/<YOUR_GAS_DEPLOYMENT_ID>/exec`  
 > 🔗 **GitHub Repository**: [https://github.com/moozuknet/WSBManager](https://github.com/moozuknet/WSBManager)
 
 ---
@@ -15,10 +15,10 @@
 ## 1. 프로젝트 아키텍처 및 배포 명세
 
 ### 1.1 핵심 자산 식별 정보
-* **GAS Script ID**: `1M5KcU6aMjfuIrwRxwnSmGPOR4VQxqE0p475M_vn5bOZhYjBhzwqfJ_Xd`
-* **Google Drive 백업 전용 폴더 ID**: `1W0jr7VODpb3NTLzdU0nxBO59A7_J7PUq` (`sandbox` 폴더)
-* **Permanent Deployment ID**: `AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC`
-* **웹 앱 실행 URL**: `https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec`
+* **GAS Script ID**: `<YOUR_GAS_SCRIPT_ID>`
+* **Google Drive 백업 전용 폴더 ID**: `<YOUR_DRIVE_FOLDER_ID>` (`sandbox` 폴더)
+* **Permanent Deployment ID**: `<YOUR_GAS_DEPLOYMENT_ID>`
+* **웹 앱 실행 URL**: `https://script.google.com/macros/s/<YOUR_GAS_DEPLOYMENT_ID>/exec`
 * **최신 배포 버전**: `v1.7.0-SAVE-AS-DUPLICATE`
 
 ### 1.2 기술 스택

@@ -2,7 +2,7 @@
 
 > **Windows Sandbox (`.wsb`) 설정 프리셋 관리 및 원클릭 빌더 웹 애플리케이션**  
 > C#/UWP 기반 오픈소스 `WSBManager`를 Google Apps Script (GAS) 기반 서버리스 웹 앱으로 전면 전환 및 보완 개발한 프로젝트입니다.  
-> 🌐 **Permanent Web App URL**: [https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec](https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec)  
+> 🌐 **Web App URL**: `https://script.google.com/macros/s/<YOUR_GAS_DEPLOYMENT_ID>/exec`  
 > 🔗 **GitHub Repository**: [https://github.com/moozuknet/WSBManager](https://github.com/moozuknet/WSBManager)
 
 ---
@@ -68,7 +68,7 @@
 ### 8. ☁️ 이중 프리셋 저장 & 스마트 클라우드 동기화
 - **로컬 저장 (Browser LocalStorage)**: 즉각적인 반응성 제공 및 클라우드 프리셋 병합
 - **구글 클라우드 저장 (GAS `PropertiesService`)**: 다른 기기/환경에서도 프리셋 동기화
-- **Google Drive 백업 지정 폴더 저장**: 전용 백업 폴더(`1W0jr7VODpb3NTLzdU0nxBO59A7_J7PUq`)에 JSON 파일 백업
+- **Google Drive 백업 지정 폴더 저장**: 전용 백업 폴더(`<YOUR_DRIVE_FOLDER_ID>`)에 JSON 파일 백업
 
 ---
 
