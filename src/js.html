@@ -778,67 +778,42 @@ function importPresetsJson(event) {
 // XML / .wsb File & Textarea Import Feature
 // ----------------------------------------------------
 function initWsbDropZone() {
-  const preventAllDropNav = (e) => {
-    e = e || window.event;
-    if (e && e.preventDefault) e.preventDefault();
-    if (e && e.stopPropagation) e.stopPropagation();
-    return false;
-  };
+  // Prevent browser window navigation ONLY when dragging OS files
+  window.addEventListener('dragover', (e) => {
+    if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      e.preventDefault();
+    }
+  }, false);
 
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evtName => {
-    window.addEventListener(evtName, preventAllDropNav, true);
-    document.addEventListener(evtName, preventAllDropNav, true);
-  });
+  window.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      processWsbFile(file);
+    }
+  }, false);
 
-  window.ondragover = preventAllDropNav;
-  window.ondrop = preventAllDropNav;
-  document.ondragover = preventAllDropNav;
-  document.ondrop = preventAllDropNav;
+  const dropZone = document.getElementById('wsbDropZone');
+  if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-emerald-500', 'bg-emerald-950/30');
+    });
 
-  const handleDropFile = (file) => {
-    if (!file) return;
-    const fileName = file.name;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const content = evt.target.result;
-      openXmlImportModal();
-      document.getElementById('xmlImportTextarea').value = content;
-      const baseName = fileName.replace(/\.(wsb|xml)$/i, '');
-      const presetNameInput = document.getElementById('importPresetNameInput');
-      if (presetNameInput) presetNameInput.value = baseName;
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
+    });
 
-      const statusEl = document.getElementById('wsbFileStatus');
-      if (statusEl) {
-        statusEl.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(fileName)}</span> 파일 로드 완료!`;
-      }
-      showToast(`'${fileName}' 파일 내용이 로드되었습니다. '설정값 분석 및 프리셋 생성'을 클릭하세요.`, 'info');
-    };
-    reader.readAsText(file);
-  };
-
-  const attachDropHandler = (el) => {
-    if (!el) return;
-    el.addEventListener('dragover', (e) => {
-      preventAllDropNav(e);
-      if (el.classList) el.classList.add('border-emerald-500', 'bg-emerald-950/30');
-    }, true);
-    el.addEventListener('dragleave', (e) => {
-      preventAllDropNav(e);
-      if (el.classList) el.classList.remove('border-emerald-500', 'bg-emerald-950/30');
-    }, true);
-    el.addEventListener('drop', (e) => {
-      preventAllDropNav(e);
-      if (el.classList) el.classList.remove('border-emerald-500', 'bg-emerald-950/30');
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        handleDropFile(e.dataTransfer.files[0]);
+        processWsbFile(e.dataTransfer.files[0]);
       }
-    }, true);
-  };
-
-  attachDropHandler(document.getElementById('wsbDropZone'));
-  attachDropHandler(document.getElementById('xmlImportTextarea'));
-  attachDropHandler(document.getElementById('xmlImportModal'));
-  attachDropHandler(document.body);
+    });
+  }
 }
 
 function handleWsbFileSelect(event) {
@@ -860,12 +835,16 @@ function processWsbFile(file) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const content = e.target.result;
+    
+    // Open import modal automatically on file load
+    openXmlImportModal();
+
     document.getElementById('xmlImportTextarea').value = content;
     
     // Set preset name input based on filename without extension
     const baseName = fileName.replace(/\.(wsb|xml)$/i, '');
     const presetNameInput = document.getElementById('importPresetNameInput');
-    if (!presetNameInput.value.trim()) {
+    if (presetNameInput) {
       presetNameInput.value = baseName;
     }
 
@@ -873,7 +852,7 @@ function processWsbFile(file) {
     if (statusEl) {
       statusEl.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(fileName)}</span> 파일 로드 완료!`;
     }
-    showToast(`'${fileName}' 파일의 내용이 로드되었습니다. '설정값 분석 및 프리셋 생성'을 클릭하세요.`, 'info');
+    showToast(`'${fileName}' 파일 내용이 로드되었습니다. '설정값 분석 및 프리셋 생성'을 클릭하세요.`, 'info');
   };
   reader.readAsText(file);
 }
