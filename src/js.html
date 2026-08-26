@@ -452,8 +452,8 @@ function renderPresetList(filter = '') {
     item.innerHTML = `
       <div class="flex items-center flex-1 pr-2 truncate">
         <i class="fa-solid fa-grip-vertical text-slate-600 group-hover:text-sky-400 drag-handle mr-2 text-xs" title="끌어서 순서 조정"></i>
-        <div class="flex-1 truncate" onclick="loadPreset('${escapeJsString(name)}')">
-          <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5">
+        <div class="flex-1 truncate">
+          <div class="font-medium text-xs text-slate-200 group-hover:text-sky-300 truncate flex items-center gap-1.5 preset-title-text">
             ${escapeHtml(name)}
           </div>
           ${descText ? `<div class="text-[11px] text-sky-400/80 truncate mt-0.5 font-normal"><i class="fa-regular fa-comment-dots mr-1 text-[10px]"></i>${descText}</div>` : ''}
@@ -462,10 +462,18 @@ function renderPresetList(filter = '') {
           </div>
         </div>
       </div>
-      <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition" title="삭제">
+      <button onclick="event.stopPropagation(); deletePresetByName('${escapeJsString(name)}')" class="delete-preset-btn text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition" title="삭제">
         <i class="fa-solid fa-xmark text-xs"></i>
       </button>
     `;
+
+    // Click anywhere on preset card to select
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.delete-preset-btn') || e.target.closest('.drag-handle')) {
+        return;
+      }
+      loadPreset(name);
+    });
 
     // Drag & Drop Events
     item.addEventListener('dragstart', (e) => {
@@ -758,25 +766,36 @@ function importPresetsJson(event) {
 // XML / .wsb File & Textarea Import Feature
 // ----------------------------------------------------
 function initWsbDropZone() {
-  // Prevent browser window from opening dropped files
-  window.addEventListener('dragover', (e) => e.preventDefault(), false);
-  window.addEventListener('drop', (e) => e.preventDefault(), false);
+  // Prevent browser window / document from navigating to dropped files anywhere
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    window.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+    document.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
 
   const dropZone = document.getElementById('wsbDropZone');
   if (!dropZone) return;
 
   dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.add('border-emerald-500', 'bg-emerald-950/30');
   });
 
   dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
   });
 
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/30');
     if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processWsbFile(e.dataTransfer.files[0]);
@@ -830,18 +849,18 @@ function openXmlImportModal() {
   }
   const modal = document.getElementById('xmlImportModal');
   if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    modal.style.display = 'flex';
   }
 }
 
 function closeXmlImportModal() {
   const modal = document.getElementById('xmlImportModal');
   if (modal) {
+    modal.style.setProperty('display', 'none', 'important');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    modal.style.display = 'none';
   }
 }
 
