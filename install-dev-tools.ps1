@@ -4,6 +4,7 @@
 # ===========================================================
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $w = New-Object Net.WebClient
@@ -11,7 +12,7 @@ $w.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
 
 $t = $env:TEMP
 
-# 1. 윈도우 탐색기 및 테마 설정 (확장자 표시 / 다크 모드)
+# 1. 시스템 탐색기 및 다크 모드 설정
 Write-Host "[*] 시스템 탐색기 및 다크 모드 설정 중..." -ForegroundColor Cyan
 Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'HideFileExt' -Value 0 -Force
 Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -Value 0 -Force
@@ -25,19 +26,22 @@ try {
     Start-Process $g -ArgumentList '/VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS' -Wait
     Remove-Item $g -Force -ErrorAction SilentlyContinue
     Write-Host "  [+] Git 설치 완료" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  [-] Git 설치 실패: $($_.Exception.Message)" -ForegroundColor Red
 }
 
-# 3. Python 3.12 설치
+# 3. Python 3.12 설치 (샌드박스 락 방지 옵션 적용)
 Write-Host "`n[*] Python 3.12 다운로드 및 설치 중..." -ForegroundColor Cyan
 $p = Join-Path $t "PythonSetup.exe"
 try {
     $w.DownloadFile('https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe', $p)
-    Start-Process $p -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1 Include_test=0' -Wait
+    # InstallAllUsers=0 및 SimpleInstall 옵션으로 UAC 블로킹 차단
+    Start-Process -FilePath $p -ArgumentList '/quiet InstallAllUsers=0 PrependPath=1 Include_test=0 Include_pip=1 SimpleInstall=1' -Wait
     Remove-Item $p -Force -ErrorAction SilentlyContinue
     Write-Host "  [+] Python 설치 완료" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  [-] Python 설치 실패: $($_.Exception.Message)" -ForegroundColor Red
 }
 
@@ -49,7 +53,8 @@ try {
     Start-Process msiexec.exe -ArgumentList "/i `"$n`" /qn /norestart" -Wait
     Remove-Item $n -Force -ErrorAction SilentlyContinue
     Write-Host "  [+] Node.js 설치 완료" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  [-] Node.js 설치 실패: $($_.Exception.Message)" -ForegroundColor Red
 }
 
@@ -61,14 +66,15 @@ try {
     Start-Process $v -ArgumentList '/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath' -Wait
     Remove-Item $v -Force -ErrorAction SilentlyContinue
     Write-Host "  [+] VS Code 설치 완료" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  [-] VS Code 설치 실패: $($_.Exception.Message)" -ForegroundColor Red
 }
 
-# 6. 현재 콘솔 세션의 PATH 환경변수 동기화 및 검증
+# 6. 환경변수 즉시 동기화
 $machinePath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine)
-$userPath    = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
-$env:Path    = "$machinePath;$userPath"
+$userPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
+$env:Path = "$machinePath;$userPath;$env:LOCALAPPDATA\Programs\Python\Python312;$env:LOCALAPPDATA\Programs\Python\Python312\Scripts"
 
 Write-Host "`n=======================================================" -ForegroundColor Yellow
 Write-Host " [설치 완료 검증]" -ForegroundColor Yellow
