@@ -363,35 +363,51 @@ function copyXmlToClipboard() {
 // ----------------------------------------------------
 // Preset Management (Local & Cloud Sync)
 // ----------------------------------------------------
+function getOrderedPresetKeys() {
+  const currentKeys = Object.keys(presetsState);
+  if (currentKeys.length === 0) return [];
+  const ordered = presetCustomOrder.filter(k => currentKeys.includes(k));
+  currentKeys.forEach(k => {
+    if (!ordered.includes(k)) ordered.push(k);
+  });
+  return ordered;
+}
+
 function loadPresetsFromLocalStorage() {
   try {
     const raw = localStorage.getItem('WSB_PRESETS');
     if (raw !== null) {
-      presetsState = JSON.parse(raw);
-      // Auto-clean & migrate legacy &amp; or old VS Code URLs in saved presets
-      Object.keys(presetsState).forEach(k => {
-        if (presetsState[k] && presetsState[k].logonCommand) {
-          presetsState[k].logonCommand = presetsState[k].logonCommand
-            .replace(/&amp;/g, '&')
-            .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
-            .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&amp;os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
-            .replace(/Chrome &amp; VS Code/g, 'Chrome 및 VS Code')
-            .replace(/Chrome & VS Code/g, 'Chrome 및 VS Code');
-        }
-      });
-      savePresetsToLocalStorage();
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        presetsState = parsed;
+        // Auto-clean & migrate legacy &amp; or old VS Code URLs in saved presets
+        Object.keys(presetsState).forEach(k => {
+          if (presetsState[k] && presetsState[k].logonCommand) {
+            presetsState[k].logonCommand = presetsState[k].logonCommand
+              .replace(/&amp;/g, '&')
+              .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+              .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&amp;os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+              .replace(/Chrome &amp; VS Code/g, 'Chrome 및 VS Code')
+              .replace(/Chrome & VS Code/g, 'Chrome 및 VS Code');
+          }
+        });
+        savePresetsToLocalStorage();
+      }
     }
   } catch (e) {
     console.error(e);
   }
   
-  const keys = Object.keys(presetsState);
-  if (keys.length > 0 && !activePresetName) {
-    loadPreset(keys[0]);
-  } else if (keys.length === 0) {
-    createNewPreset();
+  const keys = getOrderedPresetKeys();
+  if (keys.length > 0) {
+    if (!activePresetName || !presetsState[activePresetName]) {
+      loadPreset(keys[0]);
+    } else {
+      fillFormWithData(presetsState[activePresetName]);
+      renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+    }
   } else {
-    renderPresetList();
+    createNewPreset();
   }
 }
 
@@ -662,18 +678,23 @@ function syncCloudPresetsSilently() {
     google.script.run
       .withSuccessHandler((res) => {
         if (res && res.success && res.data) {
-          presetsState = res.data;
-          savePresetsToLocalStorage();
-          
-          const keys = Object.keys(presetsState);
-          if (keys.length > 0) {
+          const cloudData = res.data;
+          const cloudKeys = Object.keys(cloudData);
+          const localKeys = Object.keys(presetsState);
+
+          if (cloudKeys.length > 0) {
+            presetsState = Object.assign({}, presetsState, cloudData);
+            savePresetsToLocalStorage();
+            renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+            
             if (!activePresetName || !presetsState[activePresetName]) {
-              loadPreset(keys[0]);
-            } else {
-              renderPresetList();
+              const keys = getOrderedPresetKeys();
+              if (keys.length > 0) loadPreset(keys[0]);
             }
-          } else {
-            createNewPreset();
+          } else if (localKeys.length > 0) {
+            localKeys.forEach(k => {
+              google.script.run.savePresetToCloud(k, presetsState[k]);
+            });
           }
         }
       })
@@ -922,6 +943,11 @@ function importXmlFromTextarea() {
     renderPresetList();
     loadPreset(customName);
     closeXmlImportModal();
+
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.savePresetToCloud(customName, newPresetObj);
+    }
+
     showToast(`XML에서 프리셋 '${customName}'이(가) 성공적으로 생성되었습니다!`, 'success');
 
   } catch (err) {
