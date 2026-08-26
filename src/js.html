@@ -79,6 +79,23 @@ function initDefaults() {
         logonCommand: "",
         updatedAt: new Date(Date.now() - 60000).toISOString()
       },
+      "🚀 풀 개발자 팩 (Git + Python + Node.js + VS Code)": {
+        presetName: "🚀 풀 개발자 팩 (Git + Python + Node.js + VS Code)",
+        presetDescription: "GitHub 저장소(install-dev-tools.ps1) 원스톱 자동 설치 (Git, Python 3.12, Node.js LTS, VS Code, 다크 테마)",
+        vGpu: "Enable",
+        networking: "Default",
+        memoryInMB: "8192",
+        clipboard: "Default",
+        audioInput: "Default",
+        videoInput: "Default",
+        protectedClient: "Default",
+        printerRedirection: "Default",
+        mappedFolders: [
+          { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
+        ],
+        logonCommand: `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','$Host.UI.RawUI.WindowTitle = ''Dev Tools Setup''; Write-Host ''[*] GitHub에서 개발 풀 팩 설치 스크립트 다운로드 중...'' -ForegroundColor Cyan; [Net.ServicePointManager]::SecurityProtocol = 3072; try { iex ((New-Object Net.WebClient).DownloadString(''https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'')) } catch { Write-Host (''[-] 실패: '' + $_.Exception.Message) -ForegroundColor Red; $null = Read-Host ''Press Enter to exit'' }'"`,
+        updatedAt: new Date().toISOString()
+      },
       "개발자용 샌드박스 (VS Code 자동 설치)": {
         presetName: "개발자용 샌드박스 (VS Code 자동 설치)",
         presetDescription: "VS Code 무소음 자동 다운로드 및 설치 개발 환경",
@@ -234,6 +251,11 @@ function applySnippetTemplate() {
   let snippet = '';
 
   switch (val) {
+    // 🚀 GitHub Custom Script Templates (moozuknet/WSBManager)
+    case 'github-dev-tools':
+      snippet = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','$Host.UI.RawUI.WindowTitle = ''Dev Tools Setup''; Write-Host ''[*] GitHub에서 개발 풀 팩 설치 스크립트 다운로드 중...'' -ForegroundColor Cyan; [Net.ServicePointManager]::SecurityProtocol = 3072; try { iex ((New-Object Net.WebClient).DownloadString(''https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'')) } catch { Write-Host (''[-] 실패: '' + $_.Exception.Message) -ForegroundColor Red; $null = Read-Host ''Press Enter to exit'' }'"`;
+      break;
+
     // 📦 Winget Package Manager Templates (Auto-Bootstrap Winget first via curl)
     case 'winget-chrome':
       snippet = `powershell.exe -ExecutionPolicy Bypass -Command "if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Write-Host 'Winget 모듈 다운로드 중...'; curl.exe -s -L -o '$env:TEMP\\winget.msixbundle' 'https://aka.ms/getwinget'; Add-AppxPackage '$env:TEMP\\winget.msixbundle' }; Write-Host 'Chrome 설치 중...'; winget install -e --id Google.Chrome --accept-package-agreements --accept-source-agreements"`;
