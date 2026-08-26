@@ -93,7 +93,7 @@ function initDefaults() {
         mappedFolders: [
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: false }
         ],
-        logonCommand: `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','$Host.UI.RawUI.WindowTitle = ''Dev Tools Setup''; Write-Host ''[*] GitHub에서 개발 풀 팩 설치 스크립트 다운로드 중...'' -ForegroundColor Cyan; [Net.ServicePointManager]::SecurityProtocol = 3072; try { iex ((New-Object Net.WebClient).DownloadString(''https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'')) } catch { Write-Host (''[-] 실패: '' + $_.Exception.Message) -ForegroundColor Red; $null = Read-Host ''Press Enter to exit'' }'"`,
+        logonCommand: `cmd.exe /c start "Dev Auto Setup" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'))"`,
         updatedAt: new Date().toISOString()
       },
       "🇰🇷 식탁보 (TableCloth 보안 샌드박스)": {
@@ -253,7 +253,7 @@ function applySnippetTemplate() {
   switch (val) {
     // 🚀 GitHub Custom Script Templates (moozuknet/WSBManager)
     case 'github-dev-tools':
-      snippet = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','$Host.UI.RawUI.WindowTitle = ''Dev Tools Setup''; Write-Host ''[*] GitHub에서 개발 풀 팩 설치 스크립트 다운로드 중...'' -ForegroundColor Cyan; [Net.ServicePointManager]::SecurityProtocol = 3072; try { iex ((New-Object Net.WebClient).DownloadString(''https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'')) } catch { Write-Host (''[-] 실패: '' + $_.Exception.Message) -ForegroundColor Red; $null = Read-Host ''Press Enter to exit'' }'"`;
+      snippet = `cmd.exe /c start "Dev Auto Setup" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'))"`;
       break;
 
     // 🇰🇷 TableCloth & Utilities
