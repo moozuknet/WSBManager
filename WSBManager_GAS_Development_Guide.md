@@ -19,7 +19,7 @@
 * **Google Drive 백업 전용 폴더 ID**: `1W0jr7VODpb3NTLzdU0nxBO59A7_J7PUq` (`sandbox` 폴더)
 * **Permanent Deployment ID**: `AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC`
 * **웹 앱 실행 URL**: `https://script.google.com/macros/s/AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC/exec`
-* **최신 배포 버전**: `v1.5.5-CMD-START-NOEXIT`
+* **최신 배포 버전**: `v1.7.0-SAVE-AS-DUPLICATE`
 
 ### 1.2 기술 스택
 * **Backend**: Google Apps Script (JavaScript ES6+ / V8 Runtime)
@@ -34,21 +34,24 @@
 - 기존 `.wsb` 파일 또는 XML 텍스트 업로드 시 `DOMParser`를 1차 시도하고, 인코딩 오류나 `&` 미이그젝트 이스케이프 구문이 발견될 경우 `Regex Extractor` 파서로 자동 전환되어 100% 신뢰할 수 있는 구문 분석을 보장합니다.
 
 ### 2.2 GitHub 저장소 연동 커스텀 스크립트 (`scripts/*.ps1`)
-- GitHub repository 내 `scripts/` 폴더의 스크립트를 raw URL(`https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1`)로 실시간 호출합니다.
+- GitHub repository 내 `scripts/` 폴더의 커스텀 설치 스크립트 모음을 raw URL로 호출합니다.
+  - `scripts/install-dev-tools.ps1`: 풀 개발자 팩 (Git, Python 3.12, Node.js LTS, VS Code, 다크테마)
+  - `scripts/init-tablecloth.ps1`: Standalone 식탁보(TableCloth) 패키지
 - **LogonCommand 실행 패턴**:
   ```powershell
-  cmd.exe /c start "Dev Auto Setup" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/install-dev-tools.ps1'))"
+  cmd.exe /c start "Title" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/init-tablecloth.ps1'))"
   ```
-- 부팅 후 독립된 PowerShell 창이 열려 실시간 로그를 표출하며, `-NoExit`를 통해 설치 후 버전 검증(`git`, `python`, `pip`, `node`, `npm`, `code`)을 유지합니다.
 
-### 2.3 모달 내부 클립보드 복사 피드백 (In-Modal Copy Feedback)
+### 2.3 프리셋 복사 및 다른 이름으로 저장 (Save As & Duplicate)
+- **`다른 이름으로 저장 (복제)` 버튼**: 현재 수정한 폼 설정을 원본 프리셋 유실 없이 새로운 프리셋으로 저장합니다.
+- **목록 카드별 원클릭 복제 아이콘 (`fa-clone`)**: 프리셋 카드에 마우스를 올리면 표시되는 복제 버튼을 통해 원하는 프리셋을 빠른 복제합니다.
+- **자동 고유 이름 부여 (`getUniquePresetName`)**: 이름 중복 저장 시 `(2)`, `(3)` 접미사를 자동으로 추가하여 덮어쓰기를 방지합니다.
+
+### 2.4 모달 내부 클립보드 복사 피드백 (In-Modal Copy Feedback)
 - XML 미리보기 팝업 모달창 내부의 복사 버튼 클릭 시 버튼 텍스트가 `✓ 복사 완료!`로 변경되고, 우측에 `✓ 복사되었습니다!` 네온 뱃지가 생성되어 상단 토스트 알림의 가림 현상을 완전히 해소하였습니다.
 
-### 2.4 ESC 키 & 백드롭 모달 바인딩
+### 2.5 ESC 키 & 백드롭 모달 바인딩
 - 전역 `ESC` 키 핫키 이벤트 및 어두운 배경 영역 클릭 이벤트를 바인딩하여 모든 팝업 모달창을 빠르게 닫을 수 있습니다.
-
-### 2.5 스마트 클라우드 병합 (Smart Cloud Sync)
-- 웹 앱 최초 로딩 또는 새로고침 시 클라우드 프리셋 데이터를 로컬 스토리지에 `Object.assign()`으로 안전하게 머지하여 기존 저장된 프리셋이 유실되지 않습니다.
 
 ---
 
@@ -64,7 +67,8 @@ WSBManager/
 │   └── images/
 │       └── wsb_manager_main.png  # 메인 UI 스크린샷 이미지
 ├── scripts/
-│   └── install-dev-tools.ps1     # GitHub Raw 원격 다운로드용 커스텀 설치 스크립트 모듈
+│   ├── init-tablecloth.ps1       # Standalone 식탁보(TableCloth) 자동 배포 스크립트
+│   └── install-dev-tools.ps1     # 풀 개발자 팩(Git, Python, Node, VS Code) 설치 스크립트
 └── src/
     ├── appsscript.json           # Google Apps Script 웹 앱 매니페스트
     ├── Code.js                   # GAS 백엔드 진입점 (doGet 및 Cloud API)
@@ -81,6 +85,9 @@ WSBManager/
 
 | 버전 배지 | 주요 변경 사항 | 배포 ID |
 | :--- | :--- | :--- |
+| `v1.7.0-SAVE-AS-DUPLICATE` | `다른 이름으로 저장 (복제)` 버튼 및 목록 카드별 원클릭 복제 기능 추가 | `@97` |
+| `v1.6.5-AUTO-UNIQUE-PRESET-NAME` | 프리셋 이름 중복 시 `(2)`, `(3)` 자동 순번 부여 유일 이름 생성기 탑재 | `@95` |
+| `v1.6.0-TABLECLOTH-CUSTOM-SCRIPT` | 커스텀 Standalone 식탁보 스크립트(`scripts/init-tablecloth.ps1`) 교체 연동 | `@93` |
 | `v1.5.5-CMD-START-NOEXIT` | `cmd.exe start -NoExit` 실행 패턴 적용 및 스크립트 버전 검증 보강 | `@91` |
 | `v1.5.0-FAST-SCRIPT` | `Download-SafeFile` 고속 스트림 다운로더 및 세션 PATH 동기화 적용 | `@89` |
 | `v1.4.5-IN-MODAL-COPY-FEEDBACK` | XML 미리보기 모달 내부 복사 버튼 상태 변경 및 인라인 뱃지 피드백 | `@87` |

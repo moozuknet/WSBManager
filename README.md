@@ -32,8 +32,8 @@
 
 ### 2. 🚀 GitHub 저장소 커스텀 설치 스크립트 모음 (`scripts/*.ps1`)
 - GitHub 저장소 내 `scripts/` 폴더의 원격 `.ps1` 설치 스크립트를 원스톱으로 무음 다운로드 및 자동 실행합니다.
-- **`cmd.exe /c start "Dev Auto Setup" powershell.exe -NoExit ...` 실행 구조**:
-  - 부팅 직후 독립된 PowerShell 콘솔 창을 띄워 프로비저닝 진행률을 실시간으로 시각화합니다.
+- **`cmd.exe /c start "Title" powershell.exe -NoExit ...` 원스톱 실행 구조**:
+  - 부팅 직후 독립된 PowerShell 콘솔 창을 띄워 프로비저닝 진행률을 실시간 시각화합니다.
   - `-NoExit` 옵션을 통해 설치 완료 후에도 설치된 도구 버전(`git`, `python`, `pip`, `node`, `npm`, `code`)을 직접 확인할 수 있습니다.
 - **`🚀 풀 개발자 팩` (`scripts/install-dev-tools.ps1`)**:
   - `chcp 65001` UTF-8 콘솔 강제 적용 & 네트워크 연결 30초 대기 루프
@@ -42,22 +42,30 @@
   - Standalone Node.js LTS + NPM 패키지 압축 해제 배포
   - Git for Windows 무음 설치 & VS Code 인스톨러 배포
   - 시스템/사용자 PATH 영구 등록 및 현재 세션 즉시 동기화
+- **`🇰🇷 식탁보 Standalone 패키지` (`scripts/init-tablecloth.ps1`)**:
+  - 인터넷 뱅킹 및 공공기관 서명용 Standalone TableCloth 샌드박스 환경 구축
+  - 네트워크/DNS 자동 연결 검증 및 고속 무음 배포
 
-### 3. 📄 이중 엔진 `.wsb` / XML 파일 가져오기 & 드래그 앤 드롭
-- **Dual-Engine XML Parser**: DOMParser + Regex Extractor 2단계 파서를 적용하여 `&` 이스케이프 유무나 인코딩 차이에도 기존 `.wsb` 파일을 100% 완벽 파싱.
+### 3. 📋 프리셋 복사 및 다른 이름으로 저장 (Save As & Duplicate)
+- **`다른 이름으로 저장 (복제)` 버튼**: 현재 수정한 폼 설정을 원본 유실 없이 새로운 프리셋으로 즉시 복사 저장합니다.
+- **목록 카드별 원클릭 복제 아이콘 (`fa-clone`)**: 프리셋 카드에 마우스를 올리면 표시되는 복제 버튼을 통해 원하는 프리셋을 빠르게 복제할 수 있습니다.
+- **자동 고유 이름 부여 (`getUniquePresetName`)**: 중복된 이름 저장 시 `(2)`, `(3)` 접미사를 자동으로 붙여 원본 프리셋이 덮어씌워지는 현상을 완전히 방지합니다.
+
+### 4. 📄 이중 엔진 `.wsb` / XML 파일 가져오기 & 드래그 앤 드롭
+- **Dual-Engine XML Parser**: DOMParser + Regex Extractor 2단계 파서를 적용하여 `&` 이스케이프 유무나 인코딩 차이에도 기존 `.wsb` 파일을 100% 완벽 파싱합니다.
 - **창 전체 및 모달 파일 드롭 지원**: `.wsb` 파일을 브라우저 화면으로 드래그 앤 드롭하면 즉시 파싱하여 새로운 프리셋으로 자동 등록합니다.
 
-### 4. 💡 모달 레이어 내부 클립보드 복사 알림 (In-Modal Copy Feedback)
+### 5. 💡 모달 레이어 내부 클립보드 복사 알림 (In-Modal Copy Feedback)
 - XML 미리보기 모달에서 `클립보드 복사` 버튼 클릭 시, 모달창 내부의 복사 버튼이 에메랄드 그린 색상의 **`✓ 복사 완료!`**로 전환되며 우측에 **`✓ 복사되었습니다!`** 네온 뱃지가 생성됩니다.
 - 모달창이 상단 토스트 알림을 가리는 현상을 방지하여 팝업창을 닫지 않고도 즉시 복사 성공 여부를 확인할 수 있습니다.
 
-### 5. ⌨️ ESC 키 & 백드롭 클릭 창 닫기
+### 6. ⌨️ ESC 키 & 백드롭 클릭 창 닫기
 - 모든 모달 레이어(XML 미리보기, `.wsb` 파일 가져오기)에 전역 `ESC` 키 핫키 수신기 및 어두운 백드롭 영역 클릭 이벤트를 등록하여 손쉽게 모달을 닫을 수 있습니다.
 
-### 6. 🔀 드래그 앤 드롭 프리셋 목록 순서 조정
+### 7. 🔀 드래그 앤 드롭 프리셋 목록 순서 조정
 - HTML5 File Drop 이벤트와 구분된 순수 드래그 타입 필터링(`e.dataTransfer.types.includes('Files')`)을 적용하여 좌측 프리셋 카드 목록을 마우스 드래그로 손쉽게 순서 재배치할 수 있습니다.
 
-### 7. ☁️ 이중 프리셋 저장 & 스마트 클라우드 동기화
+### 8. ☁️ 이중 프리셋 저장 & 스마트 클라우드 동기화
 - **로컬 저장 (Browser LocalStorage)**: 즉각적인 반응성 제공 및 클라우드 프리셋 병합
 - **구글 클라우드 저장 (GAS `PropertiesService`)**: 다른 기기/환경에서도 프리셋 동기화
 - **Google Drive 백업 지정 폴더 저장**: 전용 백업 폴더(`1W0jr7VODpb3NTLzdU0nxBO59A7_J7PUq`)에 JSON 파일 백업
@@ -76,7 +84,8 @@ WSBManager/
 │   └── images/
 │       └── wsb_manager_main.png  # 메인 UI 스크린샷 이미지
 ├── scripts/
-│   └── install-dev-tools.ps1     # GitHub Raw 원격 다운로드용 커스텀 설치 스크립트모음 모듈
+│   ├── init-tablecloth.ps1       # Standalone 식탁보(TableCloth) 자동 배포 스크립트
+│   └── install-dev-tools.ps1     # 풀 개발자 팩(Git, Python, Node, VS Code) 설치 스크립트
 └── src/
     ├── appsscript.json           # Google Apps Script 웹 앱 매니페스트
     ├── Code.js                   # GAS 백엔드 진입점 (doGet 및 Cloud API)
@@ -118,7 +127,7 @@ WSB Manager Web에서 작성 및 생성되는 `.wsb` XML 설정 예시입니다:
   WSB Manager Web Generated Configuration
   Preset Name : 🚀 풀 개발자 팩 (Git + Python + Node.js + VS Code)
   Description : GitHub 저장소(install-dev-tools.ps1) 원스톱 자동 설치
-  Generated At: 2026-08-26 15:00:00
+  Generated At: 2026-08-26 17:00:00
 -->
 <Configuration>
   <VGpu>Enable</VGpu>
