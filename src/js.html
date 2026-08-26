@@ -758,15 +758,12 @@ function importPresetsJson(event) {
 // XML / .wsb File & Textarea Import Feature
 // ----------------------------------------------------
 function initWsbDropZone() {
+  // Prevent browser window from opening dropped files
+  window.addEventListener('dragover', (e) => e.preventDefault(), false);
+  window.addEventListener('drop', (e) => e.preventDefault(), false);
+
   const dropZone = document.getElementById('wsbDropZone');
   if (!dropZone) return;
-
-  dropZone.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'INPUT') {
-      const input = document.getElementById('wsbFileInput');
-      if (input) input.click();
-    }
-  });
 
   dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -851,30 +848,101 @@ function closeXmlImportModal() {
 function importXmlFromTextarea() {
   const rawText = document.getElementById('xmlImportTextarea').value;
   if (!rawText || rawText.trim() === '') {
-    showToast('붙여넣을 XML 코드를 입력해주세요.', 'warning');
+    showToast('분석할 XML 코드를 입력하거나 .wsb 파일을 업로드해주세요.', 'warning');
     return;
   }
 
   try {
+    let vGpu = 'Default';
+    let networking = 'Default';
+    let memoryInMB = '0';
+    let clipboard = 'Default';
+    let audioInput = 'Default';
+    let videoInput = 'Default';
+    let protectedClient = 'Default';
+    let printerRedirection = 'Default';
+    let logonCmd = '';
+    const mappedFolders = [];
+
+    // Engine 1: Attempt strict DOMParser
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(rawText, 'text/xml');
-
     const parserError = xmlDoc.getElementsByTagName('parsererror');
-    if (parserError.length > 0) {
-      showToast('올바르지 않은 XML 형식입니다. 태그 구문을 확인해주세요.', 'error');
-      return;
-    }
+    
+    if (parserError.length === 0 && xmlDoc.getElementsByTagName('Configuration').length > 0) {
+      const configNode = xmlDoc.getElementsByTagName('Configuration')[0];
+      const getTagValue = (tagName, defaultVal = '') => {
+        const el = configNode.getElementsByTagName(tagName)[0];
+        return el ? el.textContent.trim() : defaultVal;
+      };
 
-    const configNode = xmlDoc.getElementsByTagName('Configuration')[0];
-    if (!configNode) {
-      showToast('<Configuration> 태그를 찾을 수 없습니다.', 'error');
-      return;
-    }
+      vGpu = getTagValue('VGpu', 'Default');
+      networking = getTagValue('Networking', 'Default');
+      memoryInMB = getTagValue('MemoryInMB', '0');
+      clipboard = getTagValue('ClipboardRedirection', getTagValue('Clipboard', 'Default'));
+      audioInput = getTagValue('AudioInput', 'Default');
+      videoInput = getTagValue('VideoInput', 'Default');
+      protectedClient = getTagValue('ProtectedClient', 'Default');
+      printerRedirection = getTagValue('PrinterRedirection', 'Default');
 
-    const getTagValue = (tagName, defaultVal = '') => {
-      const el = configNode.getElementsByTagName(tagName)[0];
-      return el ? el.textContent.trim() : defaultVal;
-    };
+      const mappedFoldersNode = configNode.getElementsByTagName('MappedFolders')[0];
+      if (mappedFoldersNode) {
+        const folderNodes = mappedFoldersNode.getElementsByTagName('MappedFolder');
+        for (let i = 0; i < folderNodes.length; i++) {
+          const node = folderNodes[i];
+          const hf = node.getElementsByTagName('HostFolder')[0] ? node.getElementsByTagName('HostFolder')[0].textContent.trim() : '';
+          const sf = node.getElementsByTagName('SandboxFolder')[0] ? node.getElementsByTagName('SandboxFolder')[0].textContent.trim() : '';
+          const roText = node.getElementsByTagName('ReadOnly')[0] ? node.getElementsByTagName('ReadOnly')[0].textContent.trim().toLowerCase() : 'false';
+          if (hf) {
+            mappedFolders.push({ hostFolder: hf, sandboxFolder: sf, readOnly: roText === 'true' });
+          }
+        }
+      }
+
+      const logonNode = configNode.getElementsByTagName('LogonCommand')[0];
+      if (logonNode) {
+        const cmdNode = logonNode.getElementsByTagName('Command')[0];
+        if (cmdNode) logonCmd = cmdNode.textContent.trim().replace(/&amp;/g, '&');
+      }
+    } else {
+      // Engine 2: Regex Extractor (Guaranteed to parse even with unescaped XML / & symbols)
+      const extractTag = (tag) => {
+        const reg = new RegExp(`<${tag}>([^<]*)</${tag}>`, 'i');
+        const m = rawText.match(reg);
+        return m ? m[1].trim() : null;
+      };
+
+      vGpu = extractTag('VGpu') || 'Default';
+      networking = extractTag('Networking') || 'Default';
+      memoryInMB = extractTag('MemoryInMB') || '0';
+      clipboard = extractTag('ClipboardRedirection') || extractTag('Clipboard') || 'Default';
+      audioInput = extractTag('AudioInput') || 'Default';
+      videoInput = extractTag('VideoInput') || 'Default';
+      protectedClient = extractTag('ProtectedClient') || 'Default';
+      printerRedirection = extractTag('PrinterRedirection') || 'Default';
+
+      const cmdMatch = rawText.match(/<Command>([\s\S]*?)<\/Command>/i);
+      if (cmdMatch) {
+        logonCmd = cmdMatch[1].trim().replace(/&amp;/g, '&');
+      }
+
+      const folderBlockMatch = rawText.match(/<MappedFolders>([\s\S]*?)<\/MappedFolders>/i);
+      if (folderBlockMatch) {
+        const folderBlocks = folderBlockMatch[1].match(/<MappedFolder>([\s\S]*?)<\/MappedFolder>/gi) || [];
+        folderBlocks.forEach(block => {
+          const hfMatch = block.match(/<HostFolder>([^<]*)<\/HostFolder>/i);
+          const sfMatch = block.match(/<SandboxFolder>([^<]*)<\/SandboxFolder>/i);
+          const roMatch = block.match(/<ReadOnly>([^<]*)<\/ReadOnly>/i);
+          if (hfMatch && hfMatch[1].trim()) {
+            mappedFolders.push({
+              hostFolder: hfMatch[1].trim(),
+              sandboxFolder: sfMatch ? sfMatch[1].trim() : '',
+              readOnly: roMatch ? roMatch[1].trim().toLowerCase() === 'true' : false
+            });
+          }
+        });
+      }
+    }
 
     let customName = document.getElementById('importPresetNameInput').value.trim();
     if (!customName) {
@@ -882,7 +950,7 @@ function importXmlFromTextarea() {
       if (commentMatch && commentMatch[1]) {
         customName = commentMatch[1].trim();
       } else {
-        customName = 'XML 가져온 프리셋 (' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + ')';
+        customName = '가져온 프리셋 (' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + ')';
       }
     }
 
@@ -891,48 +959,20 @@ function importXmlFromTextarea() {
     if (descMatch && descMatch[1]) {
       customDesc = descMatch[1].trim();
     } else {
-      customDesc = '붙여넣은 XML 코드에서 추출된 설정값';
-    }
-
-    const mappedFolders = [];
-    const mappedFoldersNode = configNode.getElementsByTagName('MappedFolders')[0];
-    if (mappedFoldersNode) {
-      const folderNodes = mappedFoldersNode.getElementsByTagName('MappedFolder');
-      for (let i = 0; i < folderNodes.length; i++) {
-        const node = folderNodes[i];
-        const hf = node.getElementsByTagName('HostFolder')[0] ? node.getElementsByTagName('HostFolder')[0].textContent.trim() : '';
-        const sf = node.getElementsByTagName('SandboxFolder')[0] ? node.getElementsByTagName('SandboxFolder')[0].textContent.trim() : '';
-        const roText = node.getElementsByTagName('ReadOnly')[0] ? node.getElementsByTagName('ReadOnly')[0].textContent.trim().toLowerCase() : 'false';
-        if (hf) {
-          mappedFolders.push({
-            hostFolder: hf,
-            sandboxFolder: sf,
-            readOnly: roText === 'true'
-          });
-        }
-      }
-    }
-
-    let logonCmd = '';
-    const logonNode = configNode.getElementsByTagName('LogonCommand')[0];
-    if (logonNode) {
-      const cmdNode = logonNode.getElementsByTagName('Command')[0];
-      if (cmdNode) {
-        logonCmd = cmdNode.textContent.trim().replace(/&amp;/g, '&');
-      }
+      customDesc = '가져온 XML/.wsb 설정';
     }
 
     const newPresetObj = {
       presetName: customName,
       presetDescription: customDesc,
-      vGpu: getTagValue('VGpu', 'Default'),
-      networking: getTagValue('Networking', 'Default'),
-      memoryInMB: getTagValue('MemoryInMB', '0'),
-      clipboard: getTagValue('ClipboardRedirection', getTagValue('Clipboard', 'Default')),
-      audioInput: getTagValue('AudioInput', 'Default'),
-      videoInput: getTagValue('VideoInput', 'Default'),
-      protectedClient: getTagValue('ProtectedClient', 'Default'),
-      printerRedirection: getTagValue('PrinterRedirection', 'Default'),
+      vGpu: vGpu,
+      networking: networking,
+      memoryInMB: memoryInMB,
+      clipboard: clipboard,
+      audioInput: audioInput,
+      videoInput: videoInput,
+      protectedClient: protectedClient,
+      printerRedirection: printerRedirection,
       mappedFolders: mappedFolders,
       logonCommand: logonCmd,
       updatedAt: new Date().toISOString()
@@ -940,7 +980,7 @@ function importXmlFromTextarea() {
 
     presetsState[customName] = newPresetObj;
     savePresetsToLocalStorage();
-    renderPresetList();
+    renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
     loadPreset(customName);
     closeXmlImportModal();
 
@@ -948,7 +988,7 @@ function importXmlFromTextarea() {
       google.script.run.savePresetToCloud(customName, newPresetObj);
     }
 
-    showToast(`XML에서 프리셋 '${customName}'이(가) 성공적으로 생성되었습니다!`, 'success');
+    showToast(`'${customName}' 프리셋이 성공적으로 생성되었습니다!`, 'success');
 
   } catch (err) {
     console.error(err);
