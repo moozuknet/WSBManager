@@ -8,7 +8,7 @@
     "push": "clasp push -f",
     "deployments": "clasp deployments",
     "clean-deployments": "clasp undeploy --all",
-    "deploy": "clasp push -f && clasp version \"Automated Build Release\" && clasp deploy -i AKfycbyjwICUGj0U3OK_jFHjs1DxgVDFJIrNVlslDlSXAr7vw_vQ8FfTwI7EuTPzt2HU90DC -d \"Automated Release\"",
+    "deploy": "clasp push -f && clasp version \"Automated Build Release\" && clasp deploy -i AKfycbzXjy_qz5ZuVw1qAPi0Ot3rYDTRpIox4A0y_ikyTzhZKWBc7a3gSWYhgbUzaPZCT3Bu -d \"Automated Release\"",
     "redeploy": "npm run deploy"
   },
   "keywords": [

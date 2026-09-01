@@ -36,10 +36,29 @@ function savePresetToCloud(presetName, configData) {
 
 /**
  * 사용자 클라우드(UserProperties)에서 전체 프리셋 목록 조회
- * @return {Object} 프리셋 객체 Map
+ * @return {Object} { success: boolean, data: Object, order: Array }
  */
 function getPresetsFromCloud() {
   return StorageService.getPresets();
+}
+
+/**
+ * 사용자 클라우드(UserProperties)에 프리셋 순서 저장
+ * @param {Array} orderArray 프리셋 이름 순서 배열
+ * @return {Object} 처리 결과
+ */
+function savePresetOrderToCloud(orderArray) {
+  return StorageService.savePresetOrder(orderArray);
+}
+
+/**
+ * 사용자 클라우드(UserProperties)에 프리셋 일괄 저장
+ * @param {Object} presetsMap 프리셋 객체 맵
+ * @param {Array} orderArray 정렬 순서 배열
+ * @return {Object} 처리 결과
+ */
+function saveAllPresetsToCloud(presetsMap, orderArray) {
+  return StorageService.saveAllPresets(presetsMap, orderArray);
 }
 
 /**

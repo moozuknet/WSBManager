@@ -17,9 +17,9 @@
 ### 1.1 핵심 자산 식별 정보
 * **GAS Script ID**: `<YOUR_GAS_SCRIPT_ID>`
 * **Google Drive 백업 전용 폴더 ID**: `<YOUR_DRIVE_FOLDER_ID>` (`sandbox` 폴더)
-* **Permanent Deployment ID**: `<YOUR_GAS_DEPLOYMENT_ID>`
-* **웹 앱 실행 URL**: `https://script.google.com/macros/s/<YOUR_GAS_DEPLOYMENT_ID>/exec`
-* **최신 배포 버전**: `v1.7.0-SAVE-AS-DUPLICATE`
+* **Permanent Deployment ID**: `AKfycbzXjy_qz5ZuVw1qAPi0Ot3rYDTRpIox4A0y_ikyTzhZKWBc7a3gSWYhgbUzaPZCT3Bu`
+* **웹 앱 실행 URL**: `https://script.google.com/macros/s/AKfycbzXjy_qz5ZuVw1qAPi0Ot3rYDTRpIox4A0y_ikyTzhZKWBc7a3gSWYhgbUzaPZCT3Bu/exec`
+* **최신 배포 버전**: `v1.8.0-CLOUD-STORAGE-ONLY`
 
 ### 1.2 기술 스택
 * **Backend**: Google Apps Script (JavaScript ES6+ / V8 Runtime)
@@ -30,10 +30,15 @@
 
 ## 2. 핵심 구현 기능 및 기술 명세
 
-### 2.1 이중 엔진 XML 파서 (Dual-Engine XML Parser)
+### 2.1 Google Apps Script Cloud Storage 단일 저장소 일원화
+- **브라우저 LocalStorage 제거**: 접속 기기/브라우저에 로컬 데이터를 남기지 않고, `PropertiesService.getUserProperties()` 백엔드를 단일 데이터 저장소로 전면 전환하였습니다.
+- **초기 기본 프리셋 프로비저닝**: 백엔드 `_loadPresets()`에서 프리셋이 없는 최초 사용자에게 기본 3종 프리셋(기본, 풀 개발자 팩, 식탁보)을 자동 생성하여 제공합니다.
+- **프리셋 순서 클라우드 저장**: 드래그 앤 드롭으로 재배치한 순서(`WSB_PRESET_ORDER_V1`)를 클라우드에 영구 저장하여 어느 PC에서 접속하든 동일한 정렬을 유지합니다.
+
+### 2.2 이중 엔진 XML 파서 (Dual-Engine XML Parser)
 - 기존 `.wsb` 파일 또는 XML 텍스트 업로드 시 `DOMParser`를 1차 시도하고, 인코딩 오류나 `&` 미이그젝트 이스케이프 구문이 발견될 경우 `Regex Extractor` 파서로 자동 전환되어 100% 신뢰할 수 있는 구문 분석을 보장합니다.
 
-### 2.2 GitHub 저장소 연동 커스텀 스크립트 (`scripts/*.ps1`)
+### 2.3 GitHub 저장소 연동 커스텀 스크립트 (`scripts/*.ps1`)
 - GitHub repository 내 `scripts/` 폴더의 커스텀 설치 스크립트 모음을 raw URL로 호출합니다.
   - `scripts/install-dev-tools.ps1`: 풀 개발자 팩 (Git, Python 3.12, Node.js LTS, VS Code, 다크테마)
   - `scripts/init-tablecloth.ps1`: Standalone 식탁보(TableCloth) 패키지
@@ -42,15 +47,15 @@
   cmd.exe /c start "Title" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/moozuknet/WSBManager/main/scripts/init-tablecloth.ps1'))"
   ```
 
-### 2.3 프리셋 복사 및 다른 이름으로 저장 (Save As & Duplicate)
+### 2.4 프리셋 복사 및 다른 이름으로 저장 (Save As & Duplicate)
 - **`다른 이름으로 저장 (복제)` 버튼**: 현재 수정한 폼 설정을 원본 프리셋 유실 없이 새로운 프리셋으로 저장합니다.
 - **목록 카드별 원클릭 복제 아이콘 (`fa-clone`)**: 프리셋 카드에 마우스를 올리면 표시되는 복제 버튼을 통해 원하는 프리셋을 빠른 복제합니다.
 - **자동 고유 이름 부여 (`getUniquePresetName`)**: 이름 중복 저장 시 `(2)`, `(3)` 접미사를 자동으로 추가하여 덮어쓰기를 방지합니다.
 
-### 2.4 모달 내부 클립보드 복사 피드백 (In-Modal Copy Feedback)
+### 2.5 모달 내부 클립보드 복사 피드백 (In-Modal Copy Feedback)
 - XML 미리보기 팝업 모달창 내부의 복사 버튼 클릭 시 버튼 텍스트가 `✓ 복사 완료!`로 변경되고, 우측에 `✓ 복사되었습니다!` 네온 뱃지가 생성되어 상단 토스트 알림의 가림 현상을 완전히 해소하였습니다.
 
-### 2.5 ESC 키 & 백드롭 모달 바인딩
+### 2.6 ESC 키 & 백드롭 모달 바인딩
 - 전역 `ESC` 키 핫키 이벤트 및 어두운 배경 영역 클릭 이벤트를 바인딩하여 모든 팝업 모달창을 빠르게 닫을 수 있습니다.
 
 ---
@@ -85,6 +90,7 @@ WSBManager/
 
 | 버전 배지 | 주요 변경 사항 | 배포 ID |
 | :--- | :--- | :--- |
+| `v1.8.0-CLOUD-STORAGE-ONLY` | 브라우저 LocalStorage 완전 제거 & GAS 클라우드(UserProperties) 단일 영구 저장소 일원화 | `@99` |
 | `v1.7.0-SAVE-AS-DUPLICATE` | `다른 이름으로 저장 (복제)` 버튼 및 목록 카드별 원클릭 복제 기능 추가 | `@97` |
 | `v1.6.5-AUTO-UNIQUE-PRESET-NAME` | 프리셋 이름 중복 시 `(2)`, `(3)` 자동 순번 부여 유일 이름 생성기 탑재 | `@95` |
 | `v1.6.0-TABLECLOTH-CUSTOM-SCRIPT` | 커스텀 Standalone 식탁보 스크립트(`scripts/init-tablecloth.ps1`) 교체 연동 | `@93` |

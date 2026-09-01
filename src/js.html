@@ -1,5 +1,5 @@
 <script>
-// State Management
+// State Management (GAS Cloud Storage as Single Source of Truth)
 let presetsState = {};
 let activePresetName = '';
 let presetCustomOrder = [];
@@ -7,10 +7,7 @@ let draggedItemName = null;
 
 // Initial load on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-  initDefaults();
-  loadPresetOrderFromStorage();
-  loadPresetsFromLocalStorage();
-  syncCloudPresetsSilently();
+  loadCloudPresets();
   initWsbDropZone();
   initModalCloseEvents();
 });
@@ -40,28 +37,71 @@ function initModalCloseEvents() {
   }
 }
 
-function loadPresetOrderFromStorage() {
-  try {
-    const raw = localStorage.getItem('WSB_PRESET_ORDER');
-    if (raw) {
-      presetCustomOrder = JSON.parse(raw);
+// ----------------------------------------------------
+// Cloud Presets Loader (Primary Entry Point)
+// ----------------------------------------------------
+function loadCloudPresets(isManual = false) {
+  const listEl = document.getElementById('presetList');
+  if (listEl && Object.keys(presetsState).length === 0) {
+    listEl.innerHTML = `<li class="text-xs text-sky-400 text-center py-6 animate-pulse"><i class="fa-solid fa-cloud-arrow-down block text-2xl mb-2 text-sky-500"></i>클라우드 프리셋 불러오는 중...</li>`;
+  }
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    if (isManual) {
+      showToast('구글 클라우드에서 최신 프리셋을 동기화하는 중...', 'info');
     }
-  } catch (e) {
-    presetCustomOrder = [];
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success && res.data) {
+          presetsState = res.data;
+          presetCustomOrder = Array.isArray(res.order) ? res.order : [];
+
+          // Auto-clean & migrate legacy URLs/encodings in presets
+          Object.keys(presetsState).forEach(k => {
+            if (presetsState[k] && presetsState[k].logonCommand) {
+              presetsState[k].logonCommand = presetsState[k].logonCommand
+                .replace(/&amp;/g, '&')
+                .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+                .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&amp;os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
+                .replace(/Chrome &amp; VS Code/g, 'Chrome 및 VS Code')
+                .replace(/Chrome & VS Code/g, 'Chrome 및 VS Code');
+            }
+          });
+
+          const keys = getOrderedPresetKeys();
+          if (keys.length > 0) {
+            if (!activePresetName || !presetsState[activePresetName]) {
+              loadPreset(keys[0]);
+            } else {
+              fillFormWithData(presetsState[activePresetName]);
+              renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
+            }
+          } else {
+            createNewPreset();
+          }
+
+          if (isManual) {
+            showToast('클라우드 프리셋 동기화가 완료되었습니다.', 'success');
+          }
+        } else {
+          showToast('클라우드 프리셋 로드 실패: ' + (res ? res.error : '알 수 없는 오류'), 'error');
+          if (Object.keys(presetsState).length === 0) createNewPreset();
+        }
+      })
+      .withFailureHandler((err) => {
+        showToast('클라우드 서버 통신 오류: ' + err.message, 'error');
+        if (Object.keys(presetsState).length === 0) createNewPreset();
+      })
+      .getPresetsFromCloud();
+  } else {
+    // Non-GAS local mockup fallback (in-memory only)
+    initLocalFallbackDefaults();
   }
 }
 
-function savePresetOrderToStorage() {
-  try {
-    localStorage.setItem('WSB_PRESET_ORDER', JSON.stringify(presetCustomOrder));
-  } catch (e) {}
-}
-
-// Default Presets initialization if empty
-function initDefaults() {
-  const localData = localStorage.getItem('WSB_PRESETS');
-  if (localData === null) {
-    const defaultPresets = {
+function initLocalFallbackDefaults() {
+  if (Object.keys(presetsState).length === 0) {
+    presetsState = {
       "기본 샌드박스 (Default)": {
         presetName: "기본 샌드박스 (Default)",
         presetDescription: "표준 Windows Sandbox 기본 설정",
@@ -77,7 +117,7 @@ function initDefaults() {
           { hostFolder: "C:\\Users\\Public\\Downloads", sandboxFolder: "C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads", readOnly: true }
         ],
         logonCommand: "",
-        updatedAt: new Date(Date.now() - 60000).toISOString()
+        updatedAt: new Date().toISOString()
       },
       "🚀 풀 개발자 팩 (Git + Python + Node.js + VS Code)": {
         presetName: "🚀 풀 개발자 팩 (Git + Python + Node.js + VS Code)",
@@ -114,9 +154,10 @@ function initDefaults() {
         updatedAt: new Date().toISOString()
       }
     };
-    presetsState = defaultPresets;
-    savePresetsToLocalStorage();
+    presetCustomOrder = Object.keys(presetsState);
   }
+  const keys = getOrderedPresetKeys();
+  if (keys.length > 0) loadPreset(keys[0]);
 }
 
 // ----------------------------------------------------
@@ -187,6 +228,7 @@ function fillFormWithData(data) {
 function addFolderRow(folderData = {}) {
   const container = getFolderContainer();
   if (!container) return;
+
   const rowId = 'folder_row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
   const rowHtml = `
@@ -377,7 +419,6 @@ function copyXmlToClipboard() {
   const badge = document.getElementById('copyXmlBadge');
 
   const handleSuccess = () => {
-    // Visual feedback directly inside modal window
     if (btn) {
       btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-emerald-950/50";
       btn.innerHTML = `<i class="fa-solid fa-check"></i> <span id="copyXmlBtnText">복사 완료!</span>`;
@@ -387,7 +428,6 @@ function copyXmlToClipboard() {
       badge.classList.remove('hidden');
     }
 
-    // Revert back after 2.5 seconds
     setTimeout(() => {
       if (btn) {
         btn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition";
@@ -433,7 +473,7 @@ function fallbackCopyTextToClipboard(text, successCallback) {
 }
 
 // ----------------------------------------------------
-// Preset Management (Local & Cloud Sync)
+// Preset Management (Google Apps Script Cloud Storage)
 // ----------------------------------------------------
 function getOrderedPresetKeys() {
   const currentKeys = Object.keys(presetsState);
@@ -443,48 +483,6 @@ function getOrderedPresetKeys() {
     if (!ordered.includes(k)) ordered.push(k);
   });
   return ordered;
-}
-
-function loadPresetsFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem('WSB_PRESETS');
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-        presetsState = parsed;
-        // Auto-clean & migrate legacy &amp; or old VS Code URLs in saved presets
-        Object.keys(presetsState).forEach(k => {
-          if (presetsState[k] && presetsState[k].logonCommand) {
-            presetsState[k].logonCommand = presetsState[k].logonCommand
-              .replace(/&amp;/g, '&')
-              .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
-              .replace(/https:\/\/code\.visualstudio\.com\/sha\/download\?build=stable&amp;os=win32-x64-user/g, 'https://update.code.visualstudio.com/latest/win32-x64-user/stable')
-              .replace(/Chrome &amp; VS Code/g, 'Chrome 및 VS Code')
-              .replace(/Chrome & VS Code/g, 'Chrome 및 VS Code');
-          }
-        });
-        savePresetsToLocalStorage();
-      }
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  
-  const keys = getOrderedPresetKeys();
-  if (keys.length > 0) {
-    if (!activePresetName || !presetsState[activePresetName]) {
-      loadPreset(keys[0]);
-    } else {
-      fillFormWithData(presetsState[activePresetName]);
-      renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
-    }
-  } else {
-    createNewPreset();
-  }
-}
-
-function savePresetsToLocalStorage() {
-  localStorage.setItem('WSB_PRESETS', JSON.stringify(presetsState));
 }
 
 function renderPresetList(filter = '') {
@@ -602,9 +600,13 @@ function reorderPresetOrder(draggedName, targetName) {
     order.splice(fromIndex, 1);
     order.splice(toIndex, 0, draggedName);
     presetCustomOrder = order;
-    savePresetOrderToStorage();
     renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
     showToast(`'${draggedName}' 프리셋 순서가 조정되었습니다.`, 'info');
+
+    // Save order directly to GAS cloud
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.savePresetOrderToCloud(presetCustomOrder);
+    }
   }
 }
 
@@ -625,9 +627,7 @@ function getUniquePresetName(baseName) {
     return baseName;
   }
   
-  // Strip trailing (N) if present to get clean base name, e.g. "새이름 (2)" -> "새이름"
   let cleanBase = baseName.replace(/\s*\(\d+\)$/, '');
-
   let counter = 2;
   let candidate = `${cleanBase} (${counter})`;
   while (presetsState[candidate]) {
@@ -664,7 +664,7 @@ function saveCurrentPreset() {
     return;
   }
 
-  // If activePresetName changed (renamed), delete old key
+  // If activePresetName changed (renamed), delete old key from cloud
   if (activePresetName && activePresetName !== data.presetName && presetsState[activePresetName]) {
     delete presetsState[activePresetName];
     if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -682,22 +682,24 @@ function saveCurrentPreset() {
 
   presetsState[data.presetName] = data;
   activePresetName = data.presetName;
-  savePresetsToLocalStorage();
   renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
 
-  // Cloud sync if available
+  // Save directly to GAS Cloud Storage
   if (typeof google !== 'undefined' && google.script && google.script.run) {
     google.script.run
       .withSuccessHandler((res) => {
         if (res && res.success) {
-          showToast(`'${data.presetName}' 클라우드 및 로컬 저장 완료!`, 'success');
+          showToast(`'${data.presetName}' 클라우드 저장 완료!`, 'success');
         } else {
-          showToast(`로컬 저장 완료 (클라우드: ${res ? res.error : ''})`, 'info');
+          showToast(`클라우드 저장 실패: ${res ? res.error : '알 수 없는 오류'}`, 'error');
         }
+      })
+      .withFailureHandler((err) => {
+        showToast('클라우드 저장 실패: ' + err.message, 'error');
       })
       .savePresetToCloud(data.presetName, data);
   } else {
-    showToast(`'${data.presetName}' 프리셋이 로컬에 저장되었습니다.`, 'success');
+    showToast(`'${data.presetName}' 프리셋이 저장되었습니다. (로컬 모드)`, 'success');
   }
 }
 
@@ -716,7 +718,6 @@ function duplicateCurrentPreset() {
 
   activePresetName = newName;
   presetsState[newName] = data;
-  savePresetsToLocalStorage();
 
   const nameInput = document.getElementById('presetName');
   if (nameInput) nameInput.value = newName;
@@ -744,7 +745,6 @@ function duplicatePresetByName(targetName) {
   copiedData.updatedAt = new Date().toISOString();
 
   presetsState[newName] = copiedData;
-  savePresetsToLocalStorage();
 
   loadPreset(newName);
   showToast(`'${targetName}' 프리셋이 '${newName}'(으)로 복제되었습니다.`, 'success');
@@ -772,9 +772,11 @@ function deletePresetByName(name) {
   if (confirm(`'${name}' 프리셋을 삭제하시겠습니까?`)) {
     if (presetsState[name]) {
       delete presetsState[name];
-      savePresetsToLocalStorage();
 
-      // Cloud Deletion Trigger (both method names supported)
+      // Remove from custom order
+      presetCustomOrder = presetCustomOrder.filter(k => k !== name);
+
+      // Cloud Deletion Trigger
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         if (Object.keys(presetsState).length === 0) {
           google.script.run.clearAllPresetsFromCloud();
@@ -811,62 +813,7 @@ function filterPresets() {
 // GAS Cloud Sync & Drive Backup Functions
 // ----------------------------------------------------
 function syncCloudPresets() {
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    showToast('구글 클라우드에서 프리셋을 동기화하는 중...', 'info');
-    google.script.run
-      .withSuccessHandler((res) => {
-        if (res && res.success && res.data) {
-          presetsState = res.data;
-          savePresetsToLocalStorage();
-          
-          const keys = Object.keys(presetsState);
-          if (keys.length > 0) {
-            if (!activePresetName || !presetsState[activePresetName]) {
-              loadPreset(keys[0]);
-            } else {
-              renderPresetList();
-            }
-          } else {
-            createNewPreset();
-          }
-          showToast('구글 클라우드 프리셋 동기화가 완료되었습니다.', 'success');
-        } else {
-          showToast('클라우드 동기화 실패: ' + (res ? res.error : '알 수 없는 오류'), 'error');
-        }
-      })
-      .getPresetsFromCloud();
-  } else {
-    showToast('GAS 환경에서만 클라우드 동기화가 지원됩니다. (로컬 모드 실행 중)', 'info');
-  }
-}
-
-function syncCloudPresetsSilently() {
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler((res) => {
-        if (res && res.success && res.data) {
-          const cloudData = res.data;
-          const cloudKeys = Object.keys(cloudData);
-          const localKeys = Object.keys(presetsState);
-
-          if (cloudKeys.length > 0) {
-            presetsState = Object.assign({}, presetsState, cloudData);
-            savePresetsToLocalStorage();
-            renderPresetList(document.getElementById('presetSearch') ? document.getElementById('presetSearch').value : '');
-            
-            if (!activePresetName || !presetsState[activePresetName]) {
-              const keys = getOrderedPresetKeys();
-              if (keys.length > 0) loadPreset(keys[0]);
-            }
-          } else if (localKeys.length > 0) {
-            localKeys.forEach(k => {
-              google.script.run.savePresetToCloud(k, presetsState[k]);
-            });
-          }
-        }
-      })
-      .getPresetsFromCloud();
-  }
+  loadCloudPresets(true);
 }
 
 function backupDrive() {
@@ -879,6 +826,9 @@ function backupDrive() {
         } else {
           showToast(res ? res.error : 'Drive 백업 실패', 'error');
         }
+      })
+      .withFailureHandler((err) => {
+        showToast('Drive 백업 요청 실패: ' + err.message, 'error');
       })
       .exportPresetsToDrive();
   } else {
@@ -908,11 +858,19 @@ function importPresetsJson(event) {
   reader.onload = function(e) {
     try {
       const imported = JSON.parse(e.target.result);
-      if (typeof imported === 'object') {
+      if (typeof imported === 'object' && imported !== null) {
         presetsState = Object.assign({}, presetsState, imported);
-        savePresetsToLocalStorage();
+        const importedKeys = Object.keys(imported);
+        importedKeys.forEach(k => {
+          if (!presetCustomOrder.includes(k)) presetCustomOrder.push(k);
+        });
+
         renderPresetList();
-        showToast('프리셋 JSON 파일을 성공적으로 불러왔습니다.', 'success');
+        showToast('프리셋 JSON 파일을 성공적으로 불러와 클라우드에 저장합니다.', 'success');
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.saveAllPresetsToCloud(presetsState, presetCustomOrder);
+        }
       }
     } catch (err) {
       showToast('올바르지 않은 JSON 파일 포맷입니다.', 'error');
@@ -1137,7 +1095,6 @@ function importXmlFromTextarea() {
       }
     }
 
-    // Auto-generate unique preset name if duplicate exists
     customName = getUniquePresetName(customName);
 
     let customDesc = '';
@@ -1165,13 +1122,15 @@ function importXmlFromTextarea() {
     };
 
     presetsState[customName] = newPresetObj;
-    savePresetsToLocalStorage();
+    if (!presetCustomOrder.includes(customName)) {
+      presetCustomOrder.push(customName);
+    }
     
     // Close modal BEFORE calling loadPreset or cloud sync
     closeXmlImportModal();
 
     loadPreset(customName);
-    showToast(`✨ '${customName}' 프리셋이 성공적으로 생성되었습니다!`, 'success');
+    showToast(`✨ '${customName}' 프리셋이 생성되어 클라우드에 저장되었습니다!`, 'success');
 
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run.savePresetToCloud(customName, newPresetObj);

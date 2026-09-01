@@ -2,7 +2,7 @@
 
 > **Windows Sandbox (`.wsb`) 설정 프리셋 관리 및 원클릭 빌더 웹 애플리케이션**  
 > C#/UWP 기반 오픈소스 `WSBManager`를 Google Apps Script (GAS) 기반 서버리스 웹 앱으로 전면 전환 및 보완 개발한 프로젝트입니다.  
-> 🌐 **Web App URL**: `https://script.google.com/macros/s/<YOUR_GAS_DEPLOYMENT_ID>/exec`  
+> 🌐 **Web App URL**: `https://script.google.com/macros/s/AKfycbzXjy_qz5ZuVw1qAPi0Ot3rYDTRpIox4A0y_ikyTzhZKWBc7a3gSWYhgbUzaPZCT3Bu/exec`  
 > 🔗 **GitHub Repository**: [https://github.com/moozuknet/WSBManager](https://github.com/moozuknet/WSBManager)
 
 ---
@@ -65,10 +65,11 @@
 ### 7. 🔀 드래그 앤 드롭 프리셋 목록 순서 조정
 - HTML5 File Drop 이벤트와 구분된 순수 드래그 타입 필터링(`e.dataTransfer.types.includes('Files')`)을 적용하여 좌측 프리셋 카드 목록을 마우스 드래그로 손쉽게 순서 재배치할 수 있습니다.
 
-### 8. ☁️ 이중 프리셋 저장 & 스마트 클라우드 동기화
-- **로컬 저장 (Browser LocalStorage)**: 즉각적인 반응성 제공 및 클라우드 프리셋 병합
-- **구글 클라우드 저장 (GAS `PropertiesService`)**: 다른 기기/환경에서도 프리셋 동기화
-- **Google Drive 백업 지정 폴더 저장**: 전용 백업 폴더(`<YOUR_DRIVE_FOLDER_ID>`)에 JSON 파일 백업
+### 8. ☁️ 구글 클라우드(`PropertiesService`) 단일 영구 저장소
+- **브라우저 로컬 스토리지(`localStorage`) 완전 제거**: 접속 기기나 브라우저에 데이터를 종속시키지 않고, 모든 프리셋 데이터 및 사용자 정의 순서를 구글 클라우드에 직접 저장합니다.
+- **완벽한 크로스 디바이스 일치**: 집, 회사, 노트북 등 어느 환경에서 접속하더라도 동일한 구글 계정이라면 100% 동일한 프리셋 목록이 즉시 유지됩니다.
+- **초기 기본 프리셋 자동 프로비저닝**: 백엔드에서 신규 접속 시 기본 3종 프리셋(기본 샌드박스, 풀 개발자 팩, 식탁보)을 자동 생성하여 제공합니다.
+- **Google Drive 백업 폴더 연동**: 필요 시 구글 드라이브 지정 백업 폴더(`sandbox`)에 전체 프리셋 JSON 파일을 원클릭으로 백업할 수 있습니다.
 
 ---
 
